@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<%- include('partials/head') %>
+<body>
+  <%- include('partials/navbar') %>
+
+  <main class="container my-5" style="max-width: 700px;">
+    <div class="card p-4">
+      <h2 class="font-brand text-accent mb-4">Publicar Novo Guia ou Dica</h2>
+      <form action="/guides" method="POST">
+        <div class="mb-3">
+          <label for="titulo" class="form-label text-light">Título do Guia</label>
+          <input type="text" class="form-control bg-dark text-light border-secondary" id="titulo" placeholder="Ex: Localização de todos os baús secretos">
+        </div>
+        
+        <div class="mb-3">
+          <label for="jogo" class="form-label">Jogo / Fandom</label>
+          <select class="form-select bg-dark text-light border-secondary" id="jogo">
+            <option selected>Selecione um jogo...</option>
+            <option value="1">Golden Sun</option>
+            <option value="2">Vagrant Story</option>
+            <option value="3">Chrono Trigger</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="conteudo" class="form-label">Conteúdo do Guia (Dicas detalhadas)</label>
+          <textarea class="form-control bg-dark text-light border-secondary" id="conteudo" rows="6" placeholder="Escreva aqui o seu tutorial..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary-custom w-100">Publicar Guia (Protótipo)</button>
+      </form>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,53 @@
+:root {
+  --bg-dark: #181825;
+  --card-dark: #1e1e2e;
+  --text-main: #cdd6f4;
+  --accent-purple: #cba6f7;
+  --accent-cyan: #89dceb;
+  --border-color: #313244;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.font-brand {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+}
+
+.bg-custom-nav, .card {
+  background-color: var(--card-dark) !important;
+  border-color: var(--border-color) !important;
+}
+
+.text-accent {
+  color: var(--accent-purple) !important;
+}
+
+.btn-outline-purple {
+  color: var(--accent-purple);
+  border-color: var(--accent-purple);
+}
+
+.btn-outline-purple:hover {
+  background-color: var(--accent-purple);
+  color: #11111b;
+}
+
+.btn-primary-custom {
+  background-color: var(--accent-purple);
+  color: #11111b;
+  font-weight: 600;
+  border: none;
+}
+
+.btn-primary-custom:hover {
+  background-color: #b4befe;
+  color: #11111b;
+}

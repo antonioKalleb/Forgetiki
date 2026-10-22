@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<%- include('partials/head') %>
+<body>
+  <%- include('partials/navbar') %>
+
+  <main class="container my-5">
+    <div class="row">
+      <!-- Coluna Principal (Conteúdo) -->
+      <div class="col-lg-8">
+        <div class="p-4 mb-4 rounded bg-custom-nav border border-secondary">
+          <h1 class="font-brand text-accent">Bem-vindo ao FandomArchive!</h1>
+          <p class="lead">O portal dedicado a abrigar comunidades, wikis, guias e dicas de jogos clássicos, cults ou esquecidos pelo tempo.</p>
+          <a href="/guides/new" class="btn btn-primary-custom"> + Criar um Guia ou Dica</a>
+        </div>
+
+        <h3 class="font-brand mb-3">Últimas Dicas da Comunidade</h3>
+        
+        <!-- Card Fictício de Exemplo -->
+        <div class="card mb-3 text-light">
+          <div class="card-body">
+            <span class="badge bg-secondary mb-2">Chrono Trigger</span>
+            <h5 class="card-title">Como encontrar todos os finais em Chrono Trigger</h5>
+            <p class="card-text">Um guia passo a passo detalhando as escolhas e momentos exatos para desbloquear cada um dos 13 finais...</p>
+            <a href="#" class="btn btn-sm btn-outline-info">Ler guia completo →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna Secundária (Sidebar) -->
+      <div class="col-lg-4">
+        <div class="card p-3 mb-4">
+          <h4 class="font-brand text-accent mb-3">Fandoms em Destaque</h4>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item bg-transparent text-light border-secondary">🎮 Golden Sun</li>
+            <li class="list-group-item bg-transparent text-light border-secondary">🎮 Vagrant Story</li>
+            <li class="list-group-item bg-transparent text-light border-secondary">🎮 Okami</li>
+            <li class="list-group-item bg-transparent text-light border-secondary">🎮 Suikoden II</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+</body>
+</html>
