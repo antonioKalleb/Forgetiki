@@ -4,8 +4,27 @@
 <body>
   <%- include('partials/navbar') %>
   <main class="container my-5">
-    <h1 class="font-brand text-accent mb-4">Guias & Dicas</h1>
-    <p>Todos os guias criados pela comunidade aparecerão aqui.</p>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="font-brand text-accent m-0">Guias & Dicas</h1>
+      <a href="/guides/new" class="btn btn-primary-custom">+ Criar Guia</a>
+    </div>
+
+    <div class="row g-4">
+      <% if (guides.length === 0) { %>
+        <p class="text-light">Nenhum guia cadastrado ainda.</p>
+      <% } else { %>
+        <% guides.forEach(guide => { %>
+          <div class="col-12 col-md-6">
+            <div class="card bg-dark text-light border-secondary p-3 h-100 d-flex flex-column">
+              <span class="badge bg-secondary w-auto mb-2 align-self-start"><%= guide.game %></span>
+              <h4><%= guide.title %></h4>
+              <p class="text-muted flex-grow-1"><%= guide.content.length > 100 ? guide.content.substring(0, 100) + '...' : guide.content %></p>
+              <a href="/guides/<%= guide.id %>" class="btn btn-outline-cyan align-self-start">Ler guia completo →</a>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
   </main>
   <%- include('partials/footer') %>
 </body>
