@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<%- include('partials/head') %>
+<body>
+  <%- include('partials/navbar') %>
+  <main class="container my-5" style="max-width: 800px;">
+    <a href="/guides" class="btn btn-outline-secondary mb-3">← Voltar para Guias</a>
+    
+    <article class="card p-4 bg-dark text-light border-secondary">
+      <span class="badge bg-secondary w-auto mb-2 align-self-start"><%= guide.game %></span>
+      <h1 class="font-brand text-accent mb-3"><%= guide.title %></h1>
+      <hr class="border-secondary">
+      <div class="mt-3 fs-5" style="white-space: pre-line;">
+        <%= guide.content %>
+      </div>
+
+      <!-- BOTÕES DE AÇÃO (EDITAR E EXCLUIR) -->
+      <div class="mt-4 pt-3 border-top border-secondary d-flex gap-2">
+        <a href="/guides/<%= guide.id %>/edit" class="btn btn-warning">✏️ Editar Guia</a>
+        
+        <form action="/guides/<%= guide.id %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este guia?');">
+          <button type="submit" class="btn btn-danger">🗑️ Excluir Guia</button>
+        </form>
+      </div>
+    </article>
+  </main>
+  <%- include('partials/footer') %>
+</body>
+</html>

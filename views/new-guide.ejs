@@ -3,36 +3,36 @@
 <%- include('partials/head') %>
 <body>
   <%- include('partials/navbar') %>
-
-  <main class="container my-5" style="max-width: 700px;">
-    <div class="card p-4">
+  <main class="container my-5" style="max-width: 600px;">
+    <div class="card p-4 bg-dark text-light border-secondary">
       <h2 class="font-brand text-accent mb-4">Publicar Novo Guia ou Dica</h2>
+      
       <form action="/guides" method="POST">
         <div class="mb-3">
-          <label for="titulo" class="form-label text-light">Título do Guia</label>
-          <input type="text" class="form-control bg-dark text-light border-secondary" id="titulo" placeholder="Ex: Localização de todos os baús secretos">
+          <label for="title" class="form-label text-light">Título do Guia</label>
+          <input type="text" id="title" name="title" class="form-control bg-dark text-light border-secondary" required>
         </div>
-        
+
         <div class="mb-3">
-          <label for="jogo" class="form-label">Jogo / Fandom</label>
-          <select class="form-select bg-dark text-light border-secondary" id="jogo">
-            <option selected>Selecione um jogo...</option>
-            <option value="1">Golden Sun</option>
-            <option value="2">Vagrant Story</option>
-            <option value="3">Chrono Trigger</option>
+          <label for="game" class="form-label text-light">Jogo / Fandom</label>
+          <select id="game" name="game" class="form-select bg-dark text-light border-secondary" required>
+            <option value="" disabled selected>Selecione um jogo...</option>
+            <option value="Chrono Trigger">Chrono Trigger</option>
+            <option value="Golden Sun">Golden Sun</option>
+            <option value="Vagrant Story">Vagrant Story</option>
+            <option value="Okami">Okami</option>
           </select>
         </div>
 
         <div class="mb-3">
-          <label for="conteudo" class="form-label">Conteúdo do Guia (Dicas detalhadas)</label>
-          <textarea class="form-control bg-dark text-light border-secondary" id="conteudo" rows="6" placeholder="Escreva aqui o seu tutorial..."></textarea>
+          <label for="content" class="form-label text-light">Conteúdo do Guia</label>
+          <textarea id="content" name="content" rows="5" class="form-control bg-dark text-light border-secondary" required></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary-custom w-100">Publicar Guia (Protótipo)</button>
+        <button type="submit" class="btn btn-primary-custom w-100">Publicar Guia</button>
       </form>
     </div>
   </main>
-
   <%- include('partials/footer') %>
 </body>
 </html>
