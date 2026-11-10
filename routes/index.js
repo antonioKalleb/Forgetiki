@@ -3,17 +3,12 @@ var router = express.Router();
 
 /* GET Home Page */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Página Inicial' });
+  res.render('index', { title: 'FandomArchive' });
 });
 
-/* GET Tela de Login */
+/* GET /login (Redireciona para /users/login para evitar erro 404/ReferenceError) */
 router.get('/login', function(req, res, next) {
-  res.render('login', { title: 'Login / Cadastro' });
-});
-
-/* GET Lista de Jogos */
-router.get('/games', function(req, res, next) {
-  res.render('games', { title: 'Fandoms & Jogos' });
+  res.redirect('/users/login');
 });
 
 module.exports = router;

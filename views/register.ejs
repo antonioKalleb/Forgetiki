@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<%- include('partials/head') %>
+<body>
+  <%- include('partials/navbar') %>
+  <main class="container my-5" style="max-width: 450px;">
+    <div class="card p-4 bg-dark text-light border-secondary">
+      <h2 class="font-brand text-accent mb-3">Criar Conta</h2>
+
+      <% if (error) { %>
+        <div class="alert alert-danger py-2"><%= error %></div>
+      <% } %>
+
+      <form action="/users/register" method="POST">
+        <div class="mb-3">
+          <label class="form-label text-light">Nome de Usuário</label>
+          <input type="text" name="username" class="form-control bg-dark text-light border-secondary" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-light">Email</label>
+          <input type="email" name="email" class="form-control bg-dark text-light border-secondary" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-light">Senha</label>
+          <input type="password" name="password" class="form-control bg-dark text-light border-secondary" required>
+        </div>
+        <button type="submit" class="btn btn-primary-custom w-100 mb-3">Cadastrar</button>
+      </form>
+
+      <p class="text-center text-muted m-0">
+        Já tem uma conta? <a href="/users/login" class="text-accent">Faça Login</a>
+      </p>
+    </div>
+  </main>
+  <%- include('partials/footer') %>
+</body>
+</html>

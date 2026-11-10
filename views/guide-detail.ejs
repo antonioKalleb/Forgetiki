@@ -6,23 +6,64 @@
   <main class="container my-5" style="max-width: 800px;">
     <a href="/guides" class="btn btn-outline-secondary mb-3">← Voltar para Guias</a>
     
-    <article class="card p-4 bg-dark text-light border-secondary">
+    <article class="card p-4 bg-dark text-light border-secondary mb-4">
       <span class="badge bg-secondary w-auto mb-2 align-self-start"><%= guide.game %></span>
       <h1 class="font-brand text-accent mb-3"><%= guide.title %></h1>
-      <hr class="border-secondary">
-      <div class="mt-3 fs-5" style="white-space: pre-line;">
+      
+      <% if (guide.imageUrl) { %>
+        <img src="<%= guide.imageUrl %>" class="img-fluid rounded mb-3 border border-secondary" style="max-height: 400px; object-fit: cover;" alt="Imagem do guia">
+      <% } %>
+
+      <div class="mt-2 fs-5" style="white-space: pre-line;">
         <%= guide.content %>
       </div>
 
-      <!-- BOTÕES DE AÇÃO (EDITAR E EXCLUIR) -->
+      <% if (guide.videoUrl) { %>
+        <div class="mt-4 ratio ratio-16x9">
+          <iframe src="<%= guide.videoUrl %>" title="Vídeo do Guia" allowfullscreen class="rounded border border-secondary"></iframe>
+        </div>
+      <% } %>
+
       <div class="mt-4 pt-3 border-top border-secondary d-flex gap-2">
-        <a href="/guides/<%= guide.id %>/edit" class="btn btn-warning">✏️ Editar Guia</a>
-        
-        <form action="/guides/<%= guide.id %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este guia?');">
-          <button type="submit" class="btn btn-danger">🗑️ Excluir Guia</button>
+        <a href="/guides/<%= guide.id %>/edit" class="btn btn-warning">✏️ Editar</a>
+        <form action="/guides/<%= guide.id %>/delete" method="POST" onsubmit="return confirm('Excluir este guia?');">
+          <button type="submit" class="btn btn-danger">🗑️ Excluir</button>
         </form>
       </div>
     </article>
+
+    <!-- ÁREA DE CHAT / COMENTÁRIOS -->
+    <section class="card p-4 bg-dark text-light border-secondary">
+      <h3 class="font-brand text-accent mb-3">💬 Comentários (<%= guide.comments.length %>)</h3>
+
+      <!-- Form para enviar comentário -->
+      <form action="/guides/<%= guide.id %>/comments" method="POST" class="mb-4">
+        <div class="mb-2">
+          <input type="text" name="author" class="form-control bg-dark text-light border-secondary" placeholder="Seu Nome / Usuário" required>
+        </div>
+        <div class="mb-2">
+          <textarea name="text" rows="2" class="form-control bg-dark text-light border-secondary" placeholder="Escreva seu comentário ou dúvida..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary-custom btn-sm">Enviar Comentário</button>
+      </form>
+
+      <!-- Lista de Comentários -->
+      <div class="d-flex flex-column gap-3">
+        <% if (guide.comments.length === 0) { %>
+          <p class="text-muted m-0">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
+        <% } else { %>
+          <% guide.comments.forEach(c => { %>
+            <div class="p-3 rounded bg-secondary bg-opacity-25 border border-secondary">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <strong class="text-accent"><%= c.author %></strong>
+                <small class="text-muted"><%= c.createdAt %></small>
+              </div>
+              <p class="m-0 text-light"><%= c.text %></p>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+    </section>
   </main>
   <%- include('partials/footer') %>
 </body>

@@ -5,7 +5,7 @@
   <%- include('partials/navbar') %>
   <main class="container my-5" style="max-width: 600px;">
     <div class="card p-4 bg-dark text-light border-secondary">
-      <h2 class="font-brand text-accent mb-4">Publicar Novo Guia ou Dica</h2>
+      <h2 class="font-brand text-accent mb-4">Publicar Novo Guia</h2>
       
       <form action="/guides" method="POST">
         <div class="mb-3">
@@ -17,11 +17,20 @@
           <label for="game" class="form-label text-light">Jogo / Fandom</label>
           <select id="game" name="game" class="form-select bg-dark text-light border-secondary" required>
             <option value="" disabled selected>Selecione um jogo...</option>
-            <option value="Chrono Trigger">Chrono Trigger</option>
-            <option value="Golden Sun">Golden Sun</option>
-            <option value="Vagrant Story">Vagrant Story</option>
-            <option value="Okami">Okami</option>
+            <% games.forEach(g => { %>
+              <option value="<%= g %>"><%= g %></option>
+            <% }) %>
           </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="imageUrl" class="form-label text-light">URL da Imagem (Opcional)</label>
+          <input type="url" id="imageUrl" name="imageUrl" placeholder="https://exemplo.com/imagem.jpg" class="form-control bg-dark text-light border-secondary">
+        </div>
+
+        <div class="mb-3">
+          <label for="videoUrl" class="form-label text-light">Link do Vídeo do YouTube (Opcional)</label>
+          <input type="url" id="videoUrl" name="videoUrl" placeholder="https://www.youtube.com/watch?v=..." class="form-control bg-dark text-light border-secondary">
         </div>
 
         <div class="mb-3">

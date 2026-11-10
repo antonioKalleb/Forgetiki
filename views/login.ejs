@@ -3,20 +3,32 @@
 <%- include('partials/head') %>
 <body>
   <%- include('partials/navbar') %>
-  <main class="container my-5" style="max-width: 500px;">
-    <div class="card p-4">
+  <main class="container my-5" style="max-width: 450px;">
+    <div class="card p-4 bg-dark text-light border-secondary">
       <h2 class="font-brand text-accent mb-3">Acessar Conta</h2>
-      <form>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger py-2"><%= error %></div>
+      <% } %>
+      <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success py-2"><%= success %></div>
+      <% } %>
+
+      <form action="/users/login" method="POST">
         <div class="mb-3">
           <label class="form-label text-light">Email</label>
-          <input type="email" class="form-control bg-dark text-light border-secondary">
+          <input type="email" name="email" class="form-control bg-dark text-light border-secondary" required>
         </div>
         <div class="mb-3">
           <label class="form-label text-light">Senha</label>
-          <input type="password" class="form-control bg-dark text-light border-secondary">
+          <input type="password" name="password" class="form-control bg-dark text-light border-secondary" required>
         </div>
-        <button type="button" class="btn btn-primary-custom w-100">Entrar</button>
+        <button type="submit" class="btn btn-primary-custom w-100 mb-3">Entrar</button>
       </form>
+
+      <p class="text-center text-muted m-0">
+        Não tem uma conta? <a href="/users/register" class="text-accent">Cadastre-se</a>
+      </p>
     </div>
   </main>
   <%- include('partials/footer') %>
