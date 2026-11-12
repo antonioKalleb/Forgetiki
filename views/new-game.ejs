@@ -3,73 +3,218 @@
 <%- include('partials/head') %>
 <body>
   <%- include('partials/navbar') %>
-  <main class="container my-5" style="max-width: 620px;">
+  <main class="container my-5" id="mainContainer" style="max-width: 650px; transition: max-width 0.25s ease;">
     <a href="/games" class="btn btn-outline-secondary btn-sm mb-3">← Voltar para Fandoms</a>
 
-    <div class="card p-4 bg-dark text-light border-secondary">
-      <h2 class="font-brand text-accent mb-2">Criar Fandom da Comunidade</h2>
-      <p class="text-muted small mb-4">Crie uma página wiki dedicada para um jogo que ainda não está na lista oficial.</p>
+    <div class="row g-4 align-items-start">
+      <!-- COLUNA DO FORMULÁRIO -->
+      <div class="col-12" id="formCol">
+        <div class="card p-4 bg-dark text-light border-secondary">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <h2 class="font-brand text-accent m-0">Criar Fandom da Comunidade</h2>
+            <button type="button" id="togglePreviewBtn" class="btn btn-sm btn-outline-info">
+              👁️ Pré-visualizar Fandom
+            </button>
+          </div>
+          <p class="text-light opacity-75 small mb-4">Crie uma página wiki dedicada para um jogo que ainda não está na lista oficial.</p>
 
-      <% if (error) { %>
-        <div class="alert alert-danger py-2"><%= error %></div>
-      <% } %>
+          <% if (error) { %>
+            <div class="alert alert-danger py-2"><%= error %></div>
+          <% } %>
 
-      <form action="/games" method="POST">
-        <div class="mb-3">
-          <label for="name" class="form-label text-light">Nome Exato do Jogo</label>
-          <input type="text" id="name" name="name" class="form-control bg-dark text-light border-secondary" placeholder="Ex: Darkest Dungeon, Lisa: The Painful..." required>
+          <form action="/games" method="POST">
+            <div class="mb-3">
+              <label for="name" class="form-label text-light">Nome Exato do Jogo</label>
+              <input type="text" id="name" name="name" class="form-control bg-dark text-light border-secondary" placeholder="Ex: Darkest Dungeon, Lisa: The Painful..." required>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="genre" class="form-label text-light">Gênero</label>
+                <input type="text" id="genre" name="genre" class="form-control bg-dark text-light border-secondary" placeholder="Ex: RPG, Roguelike..." required>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="difficulty" class="form-label text-light">Nível de Dificuldade</label>
+                <select id="difficulty" name="difficulty" class="form-select bg-dark text-light border-secondary">
+                  <option value="Média">Média</option>
+                  <option value="Alta" selected>Alta</option>
+                  <option value="Muito Alta">Muito Alta</option>
+                  <option value="Extrema">Extrema</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="imageUrl" class="form-label text-light">URL da Imagem / Miniatura do Jogo (Opcional)</label>
+              <div class="d-flex gap-3 align-items-center">
+                <input type="url" id="imageUrl" name="imageUrl" class="form-control bg-dark text-light border-secondary" placeholder="https://exemplo.com/capa.jpg">
+                <div id="thumbPreviewBox" class="rounded border border-secondary d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden" style="width: 56px; height: 56px; background-color: #12121c;">
+                  <span class="small">🎮</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label text-light">Resumo Curto / Introdução ao Jogo</label>
+              <textarea id="description" name="description" rows="2" class="form-control bg-dark text-light border-secondary" placeholder="Uma introdução rápida que aparecerá no card e abaixo do título..." required></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="extendedDescription" class="form-label text-light">Sobre a Comunidade / Descrição Detalhada (Opcional)</label>
+              <textarea id="extendedDescription" name="extendedDescription" rows="3" class="form-control bg-dark text-light border-secondary" placeholder="Explique o foco desta wiki, regras de convivência, dicas de organização ou boas-vindas..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary-custom w-100">Criar Fandom</button>
+          </form>
         </div>
+      </div>
 
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="genre" class="form-label text-light">Gênero</label>
-            <input type="text" id="genre" name="genre" class="form-control bg-dark text-light border-secondary" placeholder="Ex: RPG, Roguelike..." required>
+      <!-- COLUNA OCULTA DE PRÉ-VISUALIZAÇÃO EM TEMPO REAL -->
+      <div class="col-12 col-lg-6 d-none" id="previewCol">
+        <div class="card p-3 bg-dark text-light border-info">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-info text-dark">👁️ Pré-visualização em Tempo Real</span>
+            <button type="button" class="btn-close btn-close-white btn-sm" id="closePreviewBtn"></button>
           </div>
 
-          <div class="col-md-6 mb-3">
-            <label for="difficulty" class="form-label text-light">Nível de Dificuldade</label>
-            <select id="difficulty" name="difficulty" class="form-select bg-dark text-light border-secondary">
-              <option value="Média">Média</option>
-              <option value="Alta" selected>Alta</option>
-              <option value="Muito Alta">Muito Alta</option>
-              <option value="Extrema">Extrema</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- CAMPO DE IMAGEM / MINIATURA ESTILO DISCORD -->
-        <div class="mb-3">
-          <label for="imageUrl" class="form-label text-light">URL da Imagem / Miniatura do Jogo (Opcional)</label>
-          <div class="d-flex gap-3 align-items-center">
-            <input type="url" id="imageUrl" name="imageUrl" class="form-control bg-dark text-light border-secondary" placeholder="https://exemplo.com/capa.jpg">
-            <div id="thumbPreviewBox" class="rounded border border-secondary d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden" style="width: 64px; height: 64px; background-color: #12121c;">
-              <span class="text-muted small">🎮</span>
+          <!-- 1. COMO APARECE NA LISTA DE FANDOMS -->
+          <small class="text-light opacity-75 d-block mb-1">1. Visualização no Card (Lista):</small>
+          <div class="card bg-dark text-light border-secondary border-start border-4 border-secondary p-3 mb-4" style="background-color: #141422 !important;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-danger" id="prevCardDiff">Dificuldade: Alta</span>
+              <span class="badge bg-info text-dark">0 posts</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div class="flex-grow-1" style="min-width: 0;">
+                <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+                  <h5 class="text-accent font-brand m-0 text-truncate" id="prevCardName">Nome do Jogo</h5>
+                  <span class="badge bg-secondary rounded-pill px-2" style="font-size: 0.68rem;">🌐 Comunidade</span>
+                </div>
+                <small class="text-light opacity-50 d-block mb-2" id="prevCardGenre">Gênero do Jogo</small>
+                <p class="text-light opacity-75 small mb-0" id="prevCardDesc">A introdução curta do jogo aparecerá aqui...</p>
+              </div>
+              <div id="prevCardImg" class="rounded border border-secondary flex-shrink-0 overflow-hidden d-flex align-items-center justify-content-center" style="width: 72px; height: 72px; background-color: #12121c;">
+                <span style="font-size: 1.6rem;">🎮</span>
+              </div>
             </div>
           </div>
-          <small class="text-muted">Aparecerá como miniatura no canto do card (estilo embed do Discord).</small>
-        </div>
 
-        <div class="mb-3">
-          <label for="description" class="form-label text-light">Resumo da Wiki / Sobre o Jogo</label>
-          <textarea id="description" name="description" rows="4" class="form-control bg-dark text-light border-secondary" placeholder="Explique brevemente a proposta do jogo e o foco desta comunidade..." required></textarea>
-        </div>
+          <!-- 2. COMO APARECE DENTRO DA WIKI -->
+          <small class="text-light opacity-75 d-block mb-1">2. Visualização dentro da Página Wiki:</small>
+          <div class="card bg-dark text-light border-secondary p-3" style="background-color: #141422 !important;">
+            <div class="d-flex gap-3 align-items-start">
+              <div id="prevWikiImg" class="rounded border border-secondary flex-shrink-0 overflow-hidden d-flex align-items-center justify-content-center" style="width: 68px; height: 68px; background-color: #12121c;">
+                <span style="font-size: 1.6rem;">🎮</span>
+              </div>
+              <div>
+                <div class="d-flex flex-wrap gap-1 mb-1">
+                  <span class="badge bg-secondary" id="prevWikiGenre">Gênero</span>
+                  <span class="badge bg-danger" id="prevWikiDiff">Dificuldade: Alta</span>
+                </div>
+                <h4 class="font-brand text-accent mb-1" id="prevWikiName">Nome do Jogo</h4>
+                <p class="text-light small mb-0" id="prevWikiDesc">A introdução curta do jogo aparecerá aqui...</p>
+              </div>
+            </div>
 
-        <button type="submit" class="btn btn-primary-custom w-100">Criar Fandom</button>
-      </form>
+            <div id="prevWikiExtBox" class="mt-3 pt-2 border-top border-secondary text-center d-none">
+              <div class="text-accent small font-monospace mb-1" style="font-size: 0.72rem;">═══ ◈ SOBRE A COMUNIDADE ◈ ═══</div>
+              <p class="text-light opacity-75 small mb-1" id="prevWikiExt" style="white-space: pre-line;"></p>
+              <div class="text-accent small font-monospace" style="font-size: 0.72rem;">═══ ◈ ═══</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
   </main>
 
   <script>
-    const imgInput = document.getElementById('imageUrl');
-    const previewBox = document.getElementById('thumbPreviewBox');
+    const mainContainer = document.getElementById('mainContainer');
+    const formCol = document.getElementById('formCol');
+    const previewCol = document.getElementById('previewCol');
+    const togglePreviewBtn = document.getElementById('togglePreviewBtn');
+    const closePreviewBtn = document.getElementById('closePreviewBtn');
 
-    imgInput.addEventListener('input', () => {
-      const url = imgInput.value.trim();
-      if (url) {
-        previewBox.innerHTML = `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span class=\\'text-danger small\\'>Erro</span>'">`;
+    function setPreviewState(open) {
+      if (open) {
+        mainContainer.style.maxWidth = '1140px';
+        formCol.classList.add('col-lg-6');
+        previewCol.classList.remove('d-none');
+        togglePreviewBtn.classList.replace('btn-outline-info', 'btn-info');
+        togglePreviewBtn.classList.add('text-dark');
+        togglePreviewBtn.textContent = '🙈 Ocultar Pré-visualização';
       } else {
-        previewBox.innerHTML = '<span class="text-muted small">🎮</span>';
+        mainContainer.style.maxWidth = '650px';
+        formCol.classList.remove('col-lg-6');
+        previewCol.classList.add('d-none');
+        togglePreviewBtn.classList.replace('btn-info', 'btn-outline-info');
+        togglePreviewBtn.classList.remove('text-dark');
+        togglePreviewBtn.textContent = '👁️ Pré-visualizar Fandom';
       }
+    }
+
+    let isPreviewOpen = false;
+    togglePreviewBtn.addEventListener('click', () => {
+      isPreviewOpen = !isPreviewOpen;
+      setPreviewState(isPreviewOpen);
+    });
+    closePreviewBtn.addEventListener('click', () => {
+      isPreviewOpen = false;
+      setPreviewState(false);
+    });
+
+    // Sincronização em tempo real
+    const nameIn = document.getElementById('name');
+    const genreIn = document.getElementById('genre');
+    const diffIn = document.getElementById('difficulty');
+    const imgIn = document.getElementById('imageUrl');
+    const descIn = document.getElementById('description');
+    const extIn = document.getElementById('extendedDescription');
+
+    function syncPreview() {
+      const nameVal = nameIn.value.trim() || 'Nome do Jogo';
+      const genreVal = genreIn.value.trim() || 'Gênero do Jogo';
+      const diffVal = 'Dificuldade: ' + diffIn.value;
+      const descVal = descIn.value.trim() || 'A introdução curta do jogo aparecerá aqui...';
+      const extVal = extIn.value.trim();
+      const imgVal = imgIn.value.trim();
+
+      document.getElementById('prevCardName').textContent = nameVal;
+      document.getElementById('prevWikiName').textContent = nameVal;
+      document.getElementById('prevCardGenre').textContent = genreVal;
+      document.getElementById('prevWikiGenre').textContent = genreVal;
+      document.getElementById('prevCardDiff').textContent = diffVal;
+      document.getElementById('prevWikiDiff').textContent = diffVal;
+      document.getElementById('prevCardDesc').textContent = descVal;
+      document.getElementById('prevWikiDesc').textContent = descVal;
+
+      const extBox = document.getElementById('prevWikiExtBox');
+      if (extVal) {
+        extBox.classList.remove('d-none');
+        document.getElementById('prevWikiExt').textContent = extVal;
+      } else {
+        extBox.classList.add('d-none');
+      }
+
+      const boxes = [
+        document.getElementById('thumbPreviewBox'),
+        document.getElementById('prevCardImg'),
+        document.getElementById('prevWikiImg')
+      ];
+
+      boxes.forEach(box => {
+        if (imgVal) {
+          box.innerHTML = `<img src="${imgVal}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span class=\\'small\\'>🎮</span>'">`;
+        } else {
+          box.innerHTML = '<span class="small">🎮</span>';
+        }
+      });
+    }
+
+    [nameIn, genreIn, diffIn, imgIn, descIn, extIn].forEach(el => {
+      el.addEventListener('input', syncPreview);
+      el.addEventListener('change', syncPreview);
     });
   </script>
   <%- include('partials/footer') %>

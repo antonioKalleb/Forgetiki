@@ -3,82 +3,216 @@
 <%- include('partials/head') %>
 <body>
   <%- include('partials/navbar') %>
-  <main class="container my-5" style="max-width: 620px;">
+  <main class="container my-5" id="mainContainer" style="max-width: 650px; transition: max-width 0.25s ease;">
     <a href="/games/<%= encodeURIComponent(fandom.name) %>" class="btn btn-outline-secondary btn-sm mb-3">← Voltar para Wiki</a>
 
-    <div class="card p-4 bg-dark text-light border-secondary">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="font-brand text-accent m-0">Editar Fandom</h2>
-        <span class="badge bg-secondary">Visão: Criador / Admin</span>
+    <div class="row g-4 align-items-start">
+      <div class="col-12" id="formCol">
+        <div class="card p-4 bg-dark text-light border-secondary">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <h2 class="font-brand text-accent m-0">Editar Fandom</h2>
+            <button type="button" id="togglePreviewBtn" class="btn btn-sm btn-outline-info">
+              👁️ Pré-visualizar Fandom
+            </button>
+          </div>
+          <p class="text-light opacity-75 small mb-4">Altere as informações, miniatura ou descrição detalhada desta comunidade.</p>
+
+          <% if (error) { %>
+            <div class="alert alert-danger py-2"><%= error %></div>
+          <% } %>
+
+          <form action="/games/<%= encodeURIComponent(fandom.name) %>/edit" method="POST">
+            <div class="mb-3">
+              <label for="name" class="form-label text-light">Nome do Jogo</label>
+              <input type="text" id="name" name="name" class="form-control bg-dark text-light border-secondary" value="<%= fandom.name %>" required>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="genre" class="form-label text-light">Gênero</label>
+                <input type="text" id="genre" name="genre" class="form-control bg-dark text-light border-secondary" value="<%= fandom.genre %>" required>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="difficulty" class="form-label text-light">Nível de Dificuldade</label>
+                <select id="difficulty" name="difficulty" class="form-select bg-dark text-light border-secondary">
+                  <option value="Média" <%= fandom.difficulty === 'Média' ? 'selected' : '' %>>Média</option>
+                  <option value="Alta" <%= fandom.difficulty === 'Alta' ? 'selected' : '' %>>Alta</option>
+                  <option value="Muito Alta" <%= fandom.difficulty === 'Muito Alta' ? 'selected' : '' %>>Muito Alta</option>
+                  <option value="Extrema" <%= fandom.difficulty === 'Extrema' ? 'selected' : '' %>>Extrema</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="imageUrl" class="form-label text-light">URL da Imagem / Miniatura</label>
+              <div class="d-flex gap-3 align-items-center">
+                <input type="url" id="imageUrl" name="imageUrl" class="form-control bg-dark text-light border-secondary" value="<%= fandom.imageUrl || '' %>" placeholder="https://...">
+                <div id="thumbPreviewBox" class="rounded border border-secondary d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden" style="width: 56px; height: 56px; background-color: #12121c;">
+                  <% if (fandom.imageUrl) { %>
+                    <img src="<%= fandom.imageUrl %>" style="width: 100%; height: 100%; object-fit: cover;">
+                  <% } else { %>
+                    <span class="small">🎮</span>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label text-light">Resumo Curto / Introdução ao Jogo</label>
+              <textarea id="description" name="description" rows="2" class="form-control bg-dark text-light border-secondary" required><%= fandom.description %></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="extendedDescription" class="form-label text-light">Sobre a Comunidade / Descrição Detalhada</label>
+              <textarea id="extendedDescription" name="extendedDescription" rows="3" class="form-control bg-dark text-light border-secondary"><%= fandom.extendedDescription || '' %></textarea>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary-custom w-100">Salvar Alterações</button>
+              <a href="/games/<%= encodeURIComponent(fandom.name) %>" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+          </form>
+        </div>
       </div>
-      <p class="text-muted small mb-4">Altere as informações, imagem de miniatura ou descrição desta comunidade.</p>
 
-      <% if (error) { %>
-        <div class="alert alert-danger py-2"><%= error %></div>
-      <% } %>
-
-      <form action="/games/<%= encodeURIComponent(fandom.name) %>/edit" method="POST">
-        <div class="mb-3">
-          <label for="name" class="form-label text-light">Nome do Jogo</label>
-          <input type="text" id="name" name="name" class="form-control bg-dark text-light border-secondary" value="<%= fandom.name %>" required>
-        </div>
-
-        <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="genre" class="form-label text-light">Gênero</label>
-            <input type="text" id="genre" name="genre" class="form-control bg-dark text-light border-secondary" value="<%= fandom.genre %>" required>
+      <!-- COLUNA DE PRÉ-VISUALIZAÇÃO -->
+      <div class="col-12 col-lg-6 d-none" id="previewCol">
+        <div class="card p-3 bg-dark text-light border-info">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-info text-dark">👁️ Pré-visualização em Tempo Real</span>
+            <button type="button" class="btn-close btn-close-white btn-sm" id="closePreviewBtn"></button>
           </div>
 
-          <div class="col-md-6 mb-3">
-            <label for="difficulty" class="form-label text-light">Nível de Dificuldade</label>
-            <select id="difficulty" name="difficulty" class="form-select bg-dark text-light border-secondary">
-              <option value="Média" <%= fandom.difficulty === 'Média' ? 'selected' : '' %>>Média</option>
-              <option value="Alta" <%= fandom.difficulty === 'Alta' ? 'selected' : '' %>>Alta</option>
-              <option value="Muito Alta" <%= fandom.difficulty === 'Muito Alta' ? 'selected' : '' %>>Muito Alta</option>
-              <option value="Extrema" <%= fandom.difficulty === 'Extrema' ? 'selected' : '' %>>Extrema</option>
-            </select>
+          <small class="text-light opacity-75 d-block mb-1">1. Visualização no Card (Lista):</small>
+          <div class="card bg-dark text-light border-secondary border-start border-4 border-secondary p-3 mb-4" style="background-color: #141422 !important;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-danger" id="prevCardDiff">Dificuldade: <%= fandom.difficulty %></span>
+              <span class="badge bg-info text-dark">Wiki</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div class="flex-grow-1" style="min-width: 0;">
+                <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+                  <h5 class="text-accent font-brand m-0 text-truncate" id="prevCardName"><%= fandom.name %></h5>
+                  <span class="badge bg-secondary rounded-pill px-2" style="font-size: 0.68rem;">🌐 Comunidade</span>
+                </div>
+                <small class="text-light opacity-50 d-block mb-2" id="prevCardGenre"><%= fandom.genre %></small>
+                <p class="text-light opacity-75 small mb-0" id="prevCardDesc"><%= fandom.description %></p>
+              </div>
+              <div id="prevCardImg" class="rounded border border-secondary flex-shrink-0 overflow-hidden d-flex align-items-center justify-content-center" style="width: 72px; height: 72px; background-color: #12121c;">
+                <span style="font-size: 1.6rem;">🎮</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="mb-3">
-          <label for="imageUrl" class="form-label text-light">URL da Imagem / Miniatura</label>
-          <div class="d-flex gap-3 align-items-center">
-            <input type="url" id="imageUrl" name="imageUrl" class="form-control bg-dark text-light border-secondary" value="<%= fandom.imageUrl || '' %>" placeholder="https://...">
-            <div id="thumbPreviewBox" class="rounded border border-secondary d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden" style="width: 64px; height: 64px; background-color: #12121c;">
-              <% if (fandom.imageUrl) { %>
-                <img src="<%= fandom.imageUrl %>" style="width: 100%; height: 100%; object-fit: cover;">
-              <% } else { %>
-                <span class="text-muted small">🎮</span>
-              <% } %>
+          <small class="text-light opacity-75 d-block mb-1">2. Visualização dentro da Página Wiki:</small>
+          <div class="card bg-dark text-light border-secondary p-3" style="background-color: #141422 !important;">
+            <div class="d-flex gap-3 align-items-start">
+              <div id="prevWikiImg" class="rounded border border-secondary flex-shrink-0 overflow-hidden d-flex align-items-center justify-content-center" style="width: 68px; height: 68px; background-color: #12121c;">
+                <span style="font-size: 1.6rem;">🎮</span>
+              </div>
+              <div>
+                <div class="d-flex flex-wrap gap-1 mb-1">
+                  <span class="badge bg-secondary" id="prevWikiGenre"><%= fandom.genre %></span>
+                  <span class="badge bg-danger" id="prevWikiDiff">Dificuldade: <%= fandom.difficulty %></span>
+                </div>
+                <h4 class="font-brand text-accent mb-1" id="prevWikiName"><%= fandom.name %></h4>
+                <p class="text-light small mb-0" id="prevWikiDesc"><%= fandom.description %></p>
+              </div>
+            </div>
+
+            <div id="prevWikiExtBox" class="mt-3 pt-2 border-top border-secondary text-center <%= fandom.extendedDescription ? '' : 'd-none' %>">
+              <div class="text-accent small font-monospace mb-1" style="font-size: 0.72rem;">═══ ◈ SOBRE A COMUNIDADE ◈ ═══</div>
+              <p class="text-light opacity-75 small mb-1" id="prevWikiExt" style="white-space: pre-line;"><%= fandom.extendedDescription || '' %></p>
+              <div class="text-accent small font-monospace" style="font-size: 0.72rem;">═══ ◈ ═══</div>
             </div>
           </div>
         </div>
-
-        <div class="mb-3">
-          <label for="description" class="form-label text-light">Resumo da Wiki / Sobre o Jogo</label>
-          <textarea id="description" name="description" rows="4" class="form-control bg-dark text-light border-secondary" required><%= fandom.description %></textarea>
-        </div>
-
-        <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-primary-custom w-100">Salvar Alterações</button>
-          <a href="/games/<%= encodeURIComponent(fandom.name) %>" class="btn btn-outline-secondary">Cancelar</a>
-        </div>
-      </form>
+      </div>
     </div>
   </main>
 
   <script>
-    const imgInput = document.getElementById('imageUrl');
-    const previewBox = document.getElementById('thumbPreviewBox');
+    const mainContainer = document.getElementById('mainContainer');
+    const formCol = document.getElementById('formCol');
+    const previewCol = document.getElementById('previewCol');
+    const togglePreviewBtn = document.getElementById('togglePreviewBtn');
+    const closePreviewBtn = document.getElementById('closePreviewBtn');
 
-    imgInput.addEventListener('input', () => {
-      const url = imgInput.value.trim();
-      if (url) {
-        previewBox.innerHTML = `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span class=\\'text-danger small\\'>Erro</span>'">`;
+    function setPreviewState(open) {
+      if (open) {
+        mainContainer.style.maxWidth = '1140px';
+        formCol.classList.add('col-lg-6');
+        previewCol.classList.remove('d-none');
+        togglePreviewBtn.classList.replace('btn-outline-info', 'btn-info');
+        togglePreviewBtn.classList.add('text-dark');
+        togglePreviewBtn.textContent = '🙈 Ocultar Pré-visualização';
       } else {
-        previewBox.innerHTML = '<span class="text-muted small">🎮</span>';
+        mainContainer.style.maxWidth = '650px';
+        formCol.classList.remove('col-lg-6');
+        previewCol.classList.add('d-none');
+        togglePreviewBtn.classList.replace('btn-info', 'btn-outline-info');
+        togglePreviewBtn.classList.remove('text-dark');
+        togglePreviewBtn.textContent = '👁️ Pré-visualizar Fandom';
       }
+    }
+
+    let isPreviewOpen = false;
+    togglePreviewBtn.addEventListener('click', () => {
+      isPreviewOpen = !isPreviewOpen;
+      setPreviewState(isPreviewOpen);
     });
+    closePreviewBtn.addEventListener('click', () => {
+      isPreviewOpen = false;
+      setPreviewState(false);
+    });
+
+    const nameIn = document.getElementById('name');
+    const genreIn = document.getElementById('genre');
+    const diffIn = document.getElementById('difficulty');
+    const imgIn = document.getElementById('imageUrl');
+    const descIn = document.getElementById('description');
+    const extIn = document.getElementById('extendedDescription');
+
+    function syncPreview() {
+      const nameVal = nameIn.value.trim() || 'Nome do Jogo';
+      const genreVal = genreIn.value.trim() || 'Gênero do Jogo';
+      const diffVal = 'Dificuldade: ' + diffIn.value;
+      const descVal = descIn.value.trim() || 'Introdução curta...';
+      const extVal = extIn.value.trim();
+      const imgVal = imgIn.value.trim();
+
+      document.getElementById('prevCardName').textContent = nameVal;
+      document.getElementById('prevWikiName').textContent = nameVal;
+      document.getElementById('prevCardGenre').textContent = genreVal;
+      document.getElementById('prevWikiGenre').textContent = genreVal;
+      document.getElementById('prevCardDiff').textContent = diffVal;
+      document.getElementById('prevWikiDiff').textContent = diffVal;
+      document.getElementById('prevCardDesc').textContent = descVal;
+      document.getElementById('prevWikiDesc').textContent = descVal;
+
+      const extBox = document.getElementById('prevWikiExtBox');
+      if (extVal) {
+        extBox.classList.remove('d-none');
+        document.getElementById('prevWikiExt').textContent = extVal;
+      } else {
+        extBox.classList.add('d-none');
+      }
+
+      [document.getElementById('thumbPreviewBox'), document.getElementById('prevCardImg'), document.getElementById('prevWikiImg')].forEach(box => {
+        if (imgVal) {
+          box.innerHTML = `<img src="${imgVal}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span class=\\'small\\'>🎮</span>'">`;
+        } else {
+          box.innerHTML = '<span class="small">🎮</span>';
+        }
+      });
+    }
+
+    [nameIn, genreIn, diffIn, imgIn, descIn, extIn].forEach(el => {
+      el.addEventListener('input', syncPreview);
+      el.addEventListener('change', syncPreview);
+    });
+    syncPreview();
   </script>
   <%- include('partials/footer') %>
 </body>

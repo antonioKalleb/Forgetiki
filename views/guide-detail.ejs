@@ -3,78 +3,186 @@
 <%- include('partials/head') %>
 <body>
   <%- include('partials/navbar') %>
-  <main class="container my-5" style="max-width: 800px;">
-    <a href="/guides" class="btn btn-outline-secondary mb-3">← Voltar</a>
-    
-    <article class="card p-4 bg-dark text-light border-secondary mb-4">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="badge bg-secondary"><%= guide.game %></span>
+  <main class="container my-5" style="max-width: 820px;">
+    <a href="/guides" class="btn btn-outline-secondary btn-sm mb-3">← Voltar para Central de Posts</a>
+
+    <div class="card p-4 bg-dark text-light border-secondary mb-4">
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <a href="/games/<%= encodeURIComponent(guide.game) %>" class="badge bg-secondary text-decoration-none">
+          🎮 <%= guide.game %>
+        </a>
+        <a href="/guides?category=<%= encodeURIComponent(guide.category || 'Guia') %>" class="badge bg-info text-dark text-decoration-none">
+          📌 <%= guide.category || 'Guia' %>
+        </a>
       </div>
 
       <h1 class="font-brand text-accent mb-2"><%= guide.title %></h1>
 
-      <!-- TAGS DA POSTAGEM -->
       <% if (guide.tags && guide.tags.length > 0) { %>
         <div class="d-flex flex-wrap gap-2 mb-3">
           <% guide.tags.forEach(t => { %>
-            <span class="badge bg-outline-info border border-info text-cyan">#<%= t %></span>
+            <a href="/guides?tag=<%= encodeURIComponent(t) %>" class="badge bg-dark border border-info text-info text-decoration-none">#<%= t %></a>
           <% }) %>
         </div>
       <% } %>
-      
+
       <% if (guide.imageUrl) { %>
-        <img src="<%= guide.imageUrl %>" class="img-fluid rounded mb-3 border border-secondary" style="max-height: 400px; object-fit: cover;" alt="Imagem do guia">
-      <% } %>
-
-      <div class="mt-2 fs-5" style="white-space: pre-line;">
-        <%= guide.content %>
-      </div>
-
-      <% if (guide.videoUrl) { %>
-        <div class="mt-4 ratio ratio-16x9">
-          <iframe src="<%= guide.videoUrl %>" title="Vídeo do Guia" allowfullscreen class="rounded border border-secondary"></iframe>
+        <div class="my-3 text-center">
+          <img src="<%= guide.imageUrl %>" alt="<%= guide.title %>" class="img-fluid rounded border border-secondary" style="max-height: 450px;">
         </div>
       <% } %>
 
-      <div class="mt-4 pt-3 border-top border-secondary d-flex gap-2">
-        <a href="/guides/<%= guide.id %>/edit" class="btn btn-warning">✏️ Editar</a>
-        <form action="/guides/<%= guide.id %>/delete" method="POST" onsubmit="return confirm('Excluir este guia?');">
-          <button type="submit" class="btn btn-danger">🗑️ Excluir</button>
+      <% 
+        const allLinks = (guide.links && guide.links.length > 0) ? guide.links : (guide.videoUrl ? [guide.videoUrl] : []);
+        const ytEmbeds = allLinks.map(l => getYoutubeEmbedUrl(l)).filter(Boolean);
+      %>
+
+      <% if (ytEmbeds.length > 0) { %>
+        <% ytEmbeds.forEach(embedUrl => { %>
+          <div class="ratio ratio-16x9 my-3">
+            <iframe src="<%= embedUrl %>" title="Vídeo Incorporado" allowfullscreen class="rounded border border-secondary"></iframe>
+          </div>
+        <% }) %>
+      <% } %>
+
+      <p class="text-light mt-3 fs-5" style="white-space: pre-line;"><%= guide.content %></p>
+
+      <!-- SEÇÃO DE LINKS & REFERÊNCIAS -->
+      <% if (allLinks.length > 0) { %>
+        <div class="mt-4 p-3 rounded border border-secondary" style="background-color: #13131f;">
+          <small class="text-light opacity-75 d-block mb-2">🔗 Links & Referências anexados:</small>
+          <div class="d-flex flex-column gap-2">
+            <% allLinks.forEach(link => { %>
+              <a href="<%= link %>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info text-start text-truncate">
+                ↗ <%= link %>
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="d-flex gap-2 mt-4 pt-3 border-top border-secondary">
+        <a href="/guides/<%= guide.id %>/edit" class="btn btn-warning btn-sm">✏️ Editar Post</a>
+        <form action="/guides/<%= guide.id %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir esta postagem?');">
+          <button type="submit" class="btn btn-danger btn-sm">🗑️ Excluir Post</button>
         </form>
       </div>
-    </article>
+    </div>
 
-    <!-- CHAT DA POSTAGEM -->
-    <section class="card p-4 bg-dark text-light border-secondary">
-      <h3 class="font-brand text-accent mb-3">💬 Comentários (<%= guide.comments.length %>)</h3>
+    <!-- SEÇÃO DE COMENTÁRIOS -->
+    <div class="card p-4 bg-dark text-light border-secondary">
+      <h4 class="font-brand text-accent mb-3">💬 Comentários (<%= guide.comments ? guide.comments.length : 0 %>)</h4>
 
       <form action="/guides/<%= guide.id %>/comments" method="POST" class="mb-4">
         <div class="mb-2">
-          <input type="text" name="author" class="form-control bg-dark text-light border-secondary" placeholder="Seu Nome / Usuário" required>
+          <input 
+            type="text" 
+            name="author" 
+            class="form-control bg-dark text-light border-secondary" 
+            placeholder="Seu nome ou apelido..." 
+            value="<%= (typeof currentUser !== 'undefined' && currentUser) ? currentUser.username : '' %>"
+            required
+          >
         </div>
         <div class="mb-2">
-          <textarea name="text" rows="2" class="form-control bg-dark text-light border-secondary" placeholder="Escreva seu comentário..." required></textarea>
+          <textarea name="text" rows="2" class="form-control bg-dark text-light border-secondary" placeholder="Escreva uma dica, dúvida ou feedback..." required></textarea>
         </div>
         <button type="submit" class="btn btn-primary-custom btn-sm">Enviar Comentário</button>
       </form>
 
-      <div class="d-flex flex-column gap-3">
-        <% if (guide.comments.length === 0) { %>
-          <p class="text-muted m-0">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
-        <% } else { %>
-          <% guide.comments.forEach(c => { %>
-            <div class="p-3 rounded bg-secondary bg-opacity-25 border border-secondary">
+      <% if (!guide.comments || guide.comments.length === 0) { %>
+        <p class="text-light opacity-75 small m-0">Nenhum comentário ainda. Seja o primeiro a comentar!</p>
+      <% } else { %>
+        <div class="d-flex flex-column gap-3">
+          <% guide.comments.forEach(comment => { %>
+            <div class="p-3 rounded border border-secondary" style="background-color: #13131f;">
+              
               <div class="d-flex justify-content-between align-items-center mb-1">
-                <strong class="text-accent"><%= c.author %></strong>
-                <small class="text-muted"><%= c.createdAt %></small>
+                <div class="d-flex align-items-center gap-2">
+                  <strong class="text-accent"><%= comment.author %></strong>
+                  <small class="text-light opacity-50" style="font-size: 0.75rem;">
+                    <%= comment.createdAt %> <%= comment.edited ? '(editado)' : '' %>
+                  </small>
+                </div>
+
+                <div class="d-flex align-items-center gap-1">
+                  <button type="button" class="btn btn-sm text-light opacity-75 p-1 border-0" title="Editar comentário" onclick="toggleEditComment('<%= comment.id %>')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                    </svg>
+                  </button>
+
+                  <form action="/guides/<%= guide.id %>/comments/<%= comment.id %>/delete" method="POST" class="m-0 d-inline" onsubmit="return confirm('Apagar este comentário?');">
+                    <button type="submit" class="btn btn-sm text-light opacity-75 p-1 border-0" title="Apagar comentário">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                        <path d="M10 11v6"></path>
+                        <path d="M14 11v6"></path>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                      </svg>
+                    </button>
+                  </form>
+
+                  <div class="dropdown">
+                    <button class="btn btn-sm text-light opacity-75 p-1 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Mais opções">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="5" r="2"></circle>
+                        <circle cx="12" cy="12" r="2"></circle>
+                        <circle cx="12" cy="19" r="2"></circle>
+                      </svg>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end border-secondary shadow">
+                      <li>
+                        <button type="button" class="dropdown-item small" onclick="toggleEditComment('<%= comment.id %>')">
+                          ✏️ Editar comentário
+                        </button>
+                      </li>
+                      <li>
+                        <form action="/guides/<%= guide.id %>/comments/<%= comment.id %>/delete" method="POST" onsubmit="return confirm('Apagar este comentário?');">
+                          <button type="submit" class="dropdown-item small text-danger">
+                            🗑️ Excluir comentário
+                          </button>
+                        </form>
+                      </li>
+                      <li><hr class="dropdown-divider border-secondary"></li>
+                      <li>
+                        <button type="button" class="dropdown-item small text-warning" onclick="alert('Denúncia enviada para a moderação!')">
+                          ⚠️ Denunciar comentário
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
-              <p class="m-0 text-light"><%= c.text %></p>
+
+              <p id="comment-text-<%= comment.id %>" class="text-light mb-0 small" style="white-space: pre-line;"><%= comment.text %></p>
+
+              <form id="comment-edit-<%= comment.id %>" action="/guides/<%= guide.id %>/comments/<%= comment.id %>/edit" method="POST" class="mt-2 d-none">
+                <textarea name="text" rows="2" class="form-control form-control-sm bg-dark text-light border-secondary mb-2" required><%= comment.text %></textarea>
+                <div class="d-flex gap-2 justify-content-end">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleEditComment('<%= comment.id %>')">Cancelar</button>
+                  <button type="submit" class="btn btn-primary-custom btn-sm">Salvar</button>
+                </div>
+              </form>
+
             </div>
           <% }) %>
-        <% } %>
-      </div>
-    </section>
+        </div>
+      <% } %>
+    </div>
   </main>
+
+  <script>
+    function toggleEditComment(commentId) {
+      const textEl = document.getElementById('comment-text-' + commentId);
+      const formEl = document.getElementById('comment-edit-' + commentId);
+      if (textEl && formEl) {
+        textEl.classList.toggle('d-none');
+        formEl.classList.toggle('d-none');
+      }
+    }
+  </script>
   <%- include('partials/footer') %>
 </body>
 </html>

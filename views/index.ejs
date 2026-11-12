@@ -4,39 +4,99 @@
 <body>
   <%- include('partials/navbar') %>
   <main class="container my-5">
-    <div class="card p-5 bg-dark text-light border-secondary mb-5">
-      <h1 class="font-brand text-accent mb-3">Bem-vindo ao FandomArchive!</h1>
-      <p class="fs-5 text-muted">O portal dedicado a abrigar comunidades, guias e dicas de jogos desafiadores, cults e esquecidos pelo tempo.</p>
-      <div class="d-flex gap-3 mt-3">
-        <a href="/guides/new" class="btn btn-primary-custom">+ Criar um Guia ou Dica</a>
-        <a href="/games" class="btn btn-outline-secondary">Ver Todos os Fandoms</a>
+    
+    <!-- BANNER PRINCIPAL -->
+    <div class="card p-4 p-md-5 bg-dark text-light border-secondary mb-4">
+      <h1 class="font-brand text-accent mb-2">Bem-vindo ao FandomArchive!</h1>
+      <p class="text-light opacity-75 fs-5 mb-4" style="max-width: 720px;">
+        O portal dedicado a abrigar comunidades, guias, dicas, segredos e discussões de jogos desafiadores, cults e esquecidos pelo tempo.
+      </p>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/guides/new" class="btn btn-primary-custom">+ Criar Nova Postagem</a>
+        <a href="/games" class="btn btn-outline-light">Ver Todos os Fandoms</a>
       </div>
     </div>
 
     <div class="row g-4">
-      <div class="col-12 col-md-6">
-        <div class="card p-4 bg-dark text-light border-secondary h-100">
+      <!-- COLUNA ESQUERDA: FANDOMS EM DESTAQUE -->
+      <div class="col-12 col-lg-5">
+        <div class="card p-4 bg-dark text-light border-secondary h-100 d-flex flex-column">
           <h3 class="font-brand text-accent mb-3">🎮 Fandoms em Destaque</h3>
-          <ul class="list-group list-group-flush bg-transparent">
-            <li class="list-group-item bg-transparent text-light border-secondary">💀 Fear & Hunger</li>
-            <li class="list-group-item bg-transparent text-light border-secondary">🌧️ Rain World</li>
-            <li class="list-group-item bg-transparent text-light border-secondary">🏛️ La-Mulana</li>
-            <li class="list-group-item bg-transparent text-light border-secondary">⏳ Pathologic 2</li>
-          </ul>
-          <a href="/games" class="btn btn-outline-cyan btn-sm mt-3 align-self-start">Explorar Fandoms →</a>
+          
+          <div class="list-group list-group-flush flex-grow-1 mb-3">
+            <% featuredGames.forEach(game => { %>
+              <a href="/games/<%= encodeURIComponent(game.name) %>" class="list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center py-3 px-2">
+                <div class="d-flex align-items-center gap-2">
+                  <% if (game.imageUrl) { %>
+                    <img src="<%= game.imageUrl %>" alt="<%= game.name %>" class="rounded border border-secondary" style="width: 34px; height: 34px; object-fit: cover;">
+                  <% } else { %>
+                    <span>🎮</span>
+                  <% } %>
+                  <div>
+                    <strong class="d-block"><%= game.name %></strong>
+                    <small class="text-light opacity-50"><%= game.genre %></small>
+                  </div>
+                </div>
+                <span class="badge bg-info text-dark rounded-pill">✓ Oficial</span>
+              </a>
+            <% }) %>
+          </div>
+
+          <a href="/games" class="text-accent text-decoration-none small">Explorar todos os Fandoms →</a>
         </div>
       </div>
 
-      <div class="col-12 col-md-6">
-        <div class="card p-4 bg-dark text-light border-secondary h-100 d-flex flex-column justify-content-between">
-          <div>
-            <h3 class="font-brand text-accent mb-3">📖 Central de Guias</h3>
-            <p class="text-muted">Acesse a lista completa de guias criados pela comunidade ou publique as suas próprias estratégias de sobrevivência.</p>
+      <!-- COLUNA DIREITA: CENTRAL DE POSTS -->
+      <div class="col-12 col-lg-7">
+        <div class="card p-4 bg-dark text-light border-secondary h-100 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h3 class="font-brand text-accent m-0">📌 Central de Posts</h3>
+            <span class="badge bg-secondary"><%= totalPosts %> <%= totalPosts === 1 ? 'post' : 'posts' %></span>
           </div>
-          <a href="/guides" class="btn btn-primary-custom align-self-start">Acessar Todos os Guias</a>
+          
+          <p class="text-light opacity-75 small mb-3">
+            Explore conteúdos separados por foco ou acesse o feed completo da comunidade:
+          </p>
+
+          <!-- ATALHOS RÁPIDOS POR FOCO (GUIA, DICA, TUTORIAL, SEGREDO, INTERAÇÃO...) -->
+          <div class="d-flex flex-wrap gap-2 mb-4">
+            <% postCategories.forEach(cat => { %>
+              <a href="/guides?category=<%= encodeURIComponent(cat.name) %>" class="btn btn-sm btn-outline-info rounded-pill">
+                <%= cat.icon %> <%= cat.name %>
+              </a>
+            <% }) %>
+          </div>
+
+          <!-- AMOSTRA DE POSTAGENS RECENTES -->
+          <div class="d-flex flex-column gap-2 flex-grow-1 mb-4">
+            <% if (recentPosts.length === 0) { %>
+              <p class="text-light opacity-50 small">Nenhuma postagem publicada ainda.</p>
+            <% } else { %>
+              <% recentPosts.forEach(post => { %>
+                <a href="/guides/<%= post.id %>" class="p-3 rounded border border-secondary text-decoration-none d-block" style="background-color: #13131f;">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="badge bg-info text-dark" style="font-size: 0.7rem;"><%= post.category || 'Guia' %></span>
+                    <small class="text-light opacity-75">🎮 <%= post.game %></small>
+                  </div>
+                  <strong class="text-light d-block"><%= post.title %></strong>
+                  <% if (post.tags && post.tags.length > 0) { %>
+                    <small class="text-accent font-monospace">
+                      <%= post.tags.slice(0, 3).map(t => '#' + t).join(' ') %>
+                    </small>
+                  <% } %>
+                </a>
+              <% }) %>
+            <% } %>
+          </div>
+
+          <div class="d-flex gap-2">
+            <a href="/guides" class="btn btn-primary-custom">Acessar Todos os Posts</a>
+            <a href="/guides/new" class="btn btn-outline-info">+ Publicar</a>
+          </div>
         </div>
       </div>
     </div>
+
   </main>
   <%- include('partials/footer') %>
 </body>

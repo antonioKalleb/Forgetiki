@@ -5,7 +5,6 @@
   <%- include('partials/navbar') %>
   <main class="container my-5">
 
-    <!-- MENSAGENS DE RETORNO (DENÚNCIA, SUGESTÃO OU EDIÇÃO) -->
     <% if (feedback === 'suggested') { %>
       <div class="alert alert-info alert-dismissible fade show py-2 mb-3">
         📝 Sua sugestão para <strong><%= fandom.name %></strong> foi enviada com sucesso!
@@ -24,15 +23,8 @@
     <div class="d-flex justify-content-between align-items-center mb-2">
       <a href="/games" class="btn btn-outline-secondary btn-sm">← Todos os Fandoms</a>
 
-      <!-- BOTÕES DE SUGESTÃO (CADERNO + LÁPIS) E DENÚNCIA (TRIÂNGULO COM !) ACIMA DO CANTO DIREITO -->
       <div class="d-flex align-items-center gap-2">
-        <button 
-          type="button" 
-          id="btnToggleSuggest" 
-          class="btn btn-sm btn-outline-info d-flex align-items-center gap-1" 
-          title="Enviar sugestão para esta wiki"
-        >
-          <!-- Ícone SVG: Caderno com Lápis -->
+        <button type="button" id="btnToggleSuggest" class="btn btn-sm btn-outline-info d-flex align-items-center gap-1" title="Enviar sugestão para esta wiki">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -40,13 +32,7 @@
           <span class="d-none d-sm-inline">Sugestões</span>
         </button>
 
-        <button 
-          type="button" 
-          id="btnToggleReport" 
-          class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1" 
-          title="Denunciar este Fandom"
-        >
-          <!-- Ícone SVG: Triângulo de Alerta Amarelo/Vermelho com ! no meio -->
+        <button type="button" id="btnToggleReport" class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1" title="Denunciar este Fandom">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="#f59e0b" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
             <line x1="12" y1="9" x2="12" y2="13" stroke="#111827" stroke-width="2.5"></line>
@@ -57,7 +43,7 @@
       </div>
     </div>
 
-    <!-- PAINEL OCULTO DE SUGESTÕES (ABRE AO CLICAR NO CADERNO COM LÁPIS) -->
+    <!-- PAINEL OCULTO DE SUGESTÕES -->
     <div id="suggestPanel" class="card p-3 bg-dark text-light border-info mb-3 d-none">
       <form action="/games/<%= encodeURIComponent(fandom.name) %>/suggest" method="POST">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -71,7 +57,7 @@
       </form>
     </div>
 
-    <!-- PAINEL OCULTO DE DENÚNCIA (ABRE AO CLICAR NO TRIÂNGULO COM !) -->
+    <!-- PAINEL OCULTO DE DENÚNCIA -->
     <div id="reportPanel" class="card p-3 bg-dark text-light border-danger mb-3 d-none">
       <form action="/games/<%= encodeURIComponent(fandom.name) %>/report" method="POST">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -101,7 +87,6 @@
     <div class="card p-4 bg-dark text-light border-secondary border-start border-4 <%= fandom.isOfficial ? 'border-info' : 'border-secondary' %> mb-4">
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
         
-        <!-- Esquerda: Miniatura + Dados do Fandom -->
         <div class="d-flex gap-3 align-items-start flex-grow-1">
           <div class="rounded border border-secondary flex-shrink-0 overflow-hidden d-flex align-items-center justify-content-center" style="width: 92px; height: 92px; background-color: #12121c;">
             <% if (fandom.imageUrl) { %>
@@ -121,7 +106,7 @@
             <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
               <span class="badge bg-secondary"><%= fandom.genre %></span>
               <span class="badge bg-danger">Dificuldade: <%= fandom.difficulty %></span>
-              <span class="badge bg-info text-dark"><%= guides.length %> <%= guides.length === 1 ? 'guia publicado' : 'guias publicados' %></span>
+              <span class="badge bg-info text-dark"><%= guides.length %> <%= guides.length === 1 ? 'post publicado' : 'posts publicados' %></span>
               <% if (fandom.isOfficial) { %>
                 <span class="badge bg-info text-dark rounded-pill">✓ Oficial</span>
               <% } else { %>
@@ -133,32 +118,40 @@
           </div>
         </div>
 
-        <!-- Direita: Botão Criar Guia + Controles de Criador/Admin (para Fandoms da Comunidade) -->
         <div class="d-flex flex-column align-items-end gap-2">
           <a href="/guides/new?game=<%= encodeURIComponent(fandom.name) %>" class="btn btn-primary-custom">
-            + Criar Guia para <%= fandom.name %>
+            + Criar Post para <%= fandom.name %>
           </a>
 
           <% if (!fandom.isOfficial) { %>
             <div class="d-flex gap-2 mt-1">
-              <a href="/games/<%= encodeURIComponent(fandom.name) %>/edit" class="btn btn-sm btn-outline-warning" title="Editar este Fandom (Criador/Admin)">
+              <a href="/games/<%= encodeURIComponent(fandom.name) %>/edit" class="btn btn-sm btn-outline-warning">
                 ✏️ Editar Fandom
               </a>
-              <form action="/games/<%= encodeURIComponent(fandom.name) %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir o fandom <%= fandom.name %>? Os guias existentes serão movidos para Geral.');">
-                <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir este Fandom (Criador/Admin)">
+              <form action="/games/<%= encodeURIComponent(fandom.name) %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir o fandom <%= fandom.name %>? Os posts existentes serão movidos para Geral.');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
                   🗑️ Excluir
                 </button>
               </form>
             </div>
-            <small class="text-muted" style="font-size: 0.72rem;">Controles de Criador / Staff</small>
+            <small class="text-light opacity-50" style="font-size: 0.72rem;">Controles de Criador / Staff</small>
           <% } %>
         </div>
       </div>
 
+      <!-- SEGUNDA DESCRIÇÃO ESTRUTURADA DA COMUNIDADE (FOCO, REGRAS E BOAS-VINDAS) -->
+      <% if (fandom.extendedDescription) { %>
+        <div class="mt-4 pt-3 border-top border-secondary text-center">
+          <div class="text-accent small font-monospace mb-2" style="letter-spacing: 2px;">═══ ◈ SOBRE A COMUNIDADE ◈ ═══</div>
+          <p class="text-light opacity-75 mx-auto mb-2" style="max-width: 760px; white-space: pre-line; font-size: 0.95rem;"><%= fandom.extendedDescription %></p>
+          <div class="text-accent small font-monospace" style="letter-spacing: 2px;">═══ ◈ ═══</div>
+        </div>
+      <% } %>
+
       <!-- TAGS ESPECÍFICAS DESTE JOGO -->
       <% if (gameTags && gameTags.length > 0) { %>
         <div class="mt-4 pt-3 border-top border-secondary">
-          <small class="text-muted d-block mb-2">Tópicos e tags dentro de <%= fandom.name %>:</small>
+          <small class="text-light opacity-75 d-block mb-2">Tópicos e tags dentro de <%= fandom.name %>:</small>
           <div class="d-flex flex-wrap gap-2">
             <% gameTags.forEach(tag => { %>
               <a href="/guides?game=<%= encodeURIComponent(fandom.name) %>&tag=<%= encodeURIComponent(tag.name) %>" class="badge bg-dark border border-info text-info text-decoration-none">
@@ -171,11 +164,11 @@
     </div>
 
     <!-- POSTS E GUIAS DESTE FANDOM -->
-    <h3 class="font-brand text-accent mb-3">📖 Guias & Discussões de <%= fandom.name %></h3>
+    <h3 class="font-brand text-accent mb-3">📖 Posts & Discussões de <%= fandom.name %></h3>
 
     <% if (guides.length === 0) { %>
       <div class="card p-4 bg-dark text-light border-secondary text-center">
-        <p class="text-muted mb-3">Ainda não há nenhum guia publicado para <strong><%= fandom.name %></strong>.</p>
+        <p class="text-light opacity-75 mb-3">Ainda não há nenhuma postagem publicada para <strong><%= fandom.name %></strong>.</p>
         <a href="/guides/new?game=<%= encodeURIComponent(fandom.name) %>" class="btn btn-outline-info align-self-center">
           Seja o primeiro a contribuir com este Fandom
         </a>
@@ -185,6 +178,9 @@
         <% guides.forEach(guide => { %>
           <div class="col-12 col-md-6">
             <div class="card bg-dark text-light border-secondary p-3 h-100 d-flex flex-column">
+              <div class="mb-2">
+                <span class="badge bg-info text-dark">📌 <%= guide.category || 'Guia' %></span>
+              </div>
               <h4><%= guide.title %></h4>
 
               <% if (guide.tags && guide.tags.length > 0) { %>
@@ -195,10 +191,10 @@
                 </div>
               <% } %>
 
-              <p class="text-muted flex-grow-1"><%= guide.content.length > 120 ? guide.content.substring(0, 120) + '...' : guide.content %></p>
+              <p class="text-light opacity-75 flex-grow-1"><%= guide.content.length > 120 ? guide.content.substring(0, 120) + '...' : guide.content %></p>
               
               <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
-                <small class="text-muted">💬 <%= guide.comments ? guide.comments.length : 0 %> comentários</small>
+                <small class="text-light opacity-75">💬 <%= guide.comments ? guide.comments.length : 0 %> comentários</small>
                 <a href="/guides/<%= guide.id %>" class="btn btn-outline-info btn-sm">Ler completo →</a>
               </div>
             </div>

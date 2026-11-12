@@ -3,32 +3,73 @@
 <%- include('partials/head') %>
 <body>
   <%- include('partials/navbar') %>
-  <main class="container my-5" style="max-width: 450px;">
+  <main class="container my-5" style="max-width: 480px;">
     <div class="card p-4 bg-dark text-light border-secondary">
-      <h2 class="font-brand text-accent mb-3">Acessar Conta</h2>
+      <h2 class="font-brand text-accent text-center mb-2">FandomArchive</h2>
+      <p class="text-light opacity-75 text-center small mb-4">Entre na sua conta ou crie um perfil para participar das comunidades.</p>
 
-      <% if (typeof error !== 'undefined' && error) { %>
-        <div class="alert alert-danger py-2"><%= error %></div>
-      <% } %>
-      <% if (typeof success !== 'undefined' && success) { %>
-        <div class="alert alert-success py-2"><%= success %></div>
+      <% if (error) { %>
+        <div class="alert alert-danger py-2 small"><%= error %></div>
       <% } %>
 
-      <form action="/users/login" method="POST">
-        <div class="mb-3">
-          <label class="form-label text-light">Email</label>
-          <input type="email" name="email" class="form-control bg-dark text-light border-secondary" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label text-light">Senha</label>
-          <input type="password" name="password" class="form-control bg-dark text-light border-secondary" required>
-        </div>
-        <button type="submit" class="btn btn-primary-custom w-100 mb-3">Entrar</button>
-      </form>
+      <!-- Abas Entrar / Cadastrar -->
+      <ul class="nav nav-pills nav-fill mb-4 gap-2" id="authTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link <%= activeTab === 'login' ? 'active' : 'bg-dark text-light border border-secondary' %>" id="login-tab" data-bs-toggle="tab" data-bs-target="#loginPane" type="button" role="tab">
+            Entrar
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link <%= activeTab === 'register' ? 'active' : 'bg-dark text-light border border-secondary' %>" id="register-tab" data-bs-toggle="tab" data-bs-target="#registerPane" type="button" role="tab">
+            Cadastrar
+          </button>
+        </li>
+      </ul>
 
-      <p class="text-center text-muted m-0">
-        Não tem uma conta? <a href="/users/register" class="text-accent">Cadastre-se</a>
-      </p>
+      <div class="tab-content">
+        <!-- ABA ENTRAR -->
+        <div class="tab-pane fade <%= activeTab === 'login' ? 'show active' : '' %>" id="loginPane" role="tabpanel">
+          <form action="/login" method="POST">
+            <div class="mb-3">
+              <label for="loginId" class="form-label text-light">Usuário ou E-mail</label>
+              <input type="text" id="loginId" name="loginId" class="form-control bg-dark text-light border-secondary" placeholder="Ex: Admin ou seu@email.com" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="loginPassword" class="form-label text-light">Senha</label>
+              <input type="password" id="loginPassword" name="password" class="form-control bg-dark text-light border-secondary" placeholder="••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary-custom w-100">Entrar</button>
+          </form>
+
+          <div class="mt-3 pt-2 border-top border-secondary text-center">
+            <small class="text-light opacity-50">Conta de teste rápida: <strong>Admin</strong> / senha: <strong>123</strong></small>
+          </div>
+        </div>
+
+        <!-- ABA CADASTRAR -->
+        <div class="tab-pane fade <%= activeTab === 'register' ? 'show active' : '' %>" id="registerPane" role="tabpanel">
+          <form action="/register" method="POST">
+            <div class="mb-3">
+              <label for="regUsername" class="form-label text-light">Nome de Usuário (Apelido)</label>
+              <input type="text" id="regUsername" name="username" class="form-control bg-dark text-light border-secondary" placeholder="Ex: CavaleiroVazio" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="regEmail" class="form-label text-light">E-mail</label>
+              <input type="email" id="regEmail" name="email" class="form-control bg-dark text-light border-secondary" placeholder="voce@exemplo.com" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="regPassword" class="form-label text-light">Criar Senha</label>
+              <input type="password" id="regPassword" name="password" class="form-control bg-dark text-light border-secondary" placeholder="••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary-custom w-100">Criar Conta</button>
+          </form>
+        </div>
+      </div>
     </div>
   </main>
   <%- include('partials/footer') %>

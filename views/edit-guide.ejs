@@ -3,84 +3,179 @@
 <%- include('partials/head') %>
 <body>
   <%- include('partials/navbar') %>
-  <main class="container my-5" style="max-width: 650px;">
-    <div class="card p-4 bg-dark text-light border-secondary">
-      <h2 class="font-brand text-accent mb-4">Editar Guia</h2>
-      
-      <form action="/guides/<%= guide.id %>/edit" method="POST">
-        <div class="mb-3">
-          <label for="title" class="form-label text-light">Título</label>
-          <input type="text" id="title" name="title" class="form-control bg-dark text-light border-secondary" value="<%= guide.title %>" required autocomplete="off">
-        </div>
+  <main class="container my-5" id="mainContainer" style="max-width: 650px; transition: max-width 0.25s ease;">
+    <a href="/guides/<%= guide.id %>" class="btn btn-outline-secondary btn-sm mb-3">← Voltar para Postagem</a>
 
-        <div class="mb-3 position-relative">
-          <label for="gameSearch" class="form-label text-light">Fandom / Jogo</label>
-          <div class="input-group">
-            <input 
-              type="text" 
-              id="gameSearch" 
-              class="form-control bg-dark text-light border-secondary" 
-              value="<%= guide.game %>"
-              autocomplete="off"
-            >
-            <button type="button" id="clearGameBtn" class="btn btn-outline-secondary">✕</button>
+    <div class="row g-4 align-items-start">
+      <div class="col-12" id="formCol">
+        <div class="card p-4 bg-dark text-light border-secondary">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <h2 class="font-brand text-accent m-0">Editar Postagem</h2>
+            <button type="button" id="togglePreviewBtn" class="btn btn-sm btn-outline-info">
+              👁️ Pré-visualizar Postagem
+            </button>
           </div>
-          <input type="hidden" id="game" name="game" value="<%= guide.game %>">
-
-          <div id="fandomDropdown" class="list-group position-absolute w-100 shadow border border-secondary d-none" style="max-height: 220px; overflow-y: auto; z-index: 1050; background-color: #161622;">
-          </div>
-        </div>
-
-        <div class="mb-3">
-          <label for="tags" class="form-label text-light">Tags (inicie cada tag com #)</label>
-          <input 
-            type="text" 
-            id="tags" 
-            name="tags" 
-            class="form-control bg-dark text-light border-secondary" 
-            value="<%= guide.tags && guide.tags.length > 0 ? guide.tags.map(t => '#' + t).join(' ') : '' %>"
-            autocomplete="off"
-          >
-          <div id="tagPreview" class="d-flex flex-wrap gap-1 mt-1"></div>
           
-          <% if (popularTags && popularTags.length > 0) { %>
-            <div class="mt-2">
-              <small class="text-muted d-block mb-1">Tags populares:</small>
+          <form action="/guides/<%= guide.id %>/edit" method="POST">
+            <div class="mb-3">
+              <label for="title" class="form-label text-light">Título</label>
+              <input type="text" id="title" name="title" class="form-control bg-dark text-light border-secondary" value="<%= guide.title %>" required autocomplete="off">
+            </div>
+
+            <div class="mb-3">
+              <label for="category" class="form-label text-light">Foco da Postagem</label>
+              <input type="text" id="category" name="category" class="form-control bg-dark text-light border-secondary mb-2" value="<%= guide.category || 'Guia' %>" required>
               <div class="d-flex flex-wrap gap-1">
-                <% popularTags.forEach(tag => { %>
-                  <button type="button" class="btn btn-sm btn-outline-info rounded-pill py-0 px-2" onclick="addTag('<%= tag.name %>')">
-                    #<%= tag.name %> <span class="badge bg-secondary"><%= tag.count %></span>
+                <% postCategories.forEach(cat => { %>
+                  <button type="button" class="btn btn-sm btn-outline-info rounded-pill py-0 px-2" onclick="selectCategory('<%= cat.name %>')">
+                    <%= cat.icon %> <%= cat.name %>
                   </button>
                 <% }) %>
               </div>
             </div>
-          <% } %>
-        </div>
 
-        <div class="mb-3">
-          <label for="imageUrl" class="form-label text-light">URL da Imagem</label>
-          <input type="url" id="imageUrl" name="imageUrl" class="form-control bg-dark text-light border-secondary" value="<%= guide.imageUrl %>">
-        </div>
+            <div class="mb-3 position-relative">
+              <label for="gameSearch" class="form-label text-light">Fandom / Jogo</label>
+              <div class="input-group">
+                <input type="text" id="gameSearch" class="form-control bg-dark text-light border-secondary" value="<%= guide.game %>" autocomplete="off">
+                <button type="button" id="clearGameBtn" class="btn btn-outline-secondary">✕</button>
+              </div>
+              <input type="hidden" id="game" name="game" value="<%= guide.game %>">
+              <div id="fandomDropdown" class="list-group position-absolute w-100 shadow border border-secondary d-none" style="max-height: 220px; overflow-y: auto; z-index: 1050; background-color: #161622;"></div>
+            </div>
 
-        <div class="mb-3">
-          <label for="videoUrl" class="form-label text-light">Link do Vídeo do YouTube</label>
-          <input type="url" id="videoUrl" name="videoUrl" class="form-control bg-dark text-light border-secondary" value="<%= guide.videoUrl %>">
-        </div>
+            <div class="mb-3">
+              <label for="tags" class="form-label text-light">Tags (inicie cada tag com #)</label>
+              <input 
+                type="text" 
+                id="tags" 
+                name="tags" 
+                class="form-control bg-dark text-light border-secondary" 
+                value="<%= guide.tags && guide.tags.length > 0 ? guide.tags.map(t => '#' + t).join(' ') : '' %>"
+                autocomplete="off"
+              >
+              <div id="tagPreview" class="d-flex flex-wrap gap-1 mt-1"></div>
+              
+              <% if (popularTags && popularTags.length > 0) { %>
+                <div class="mt-2">
+                  <small class="text-light opacity-75 d-block mb-1">Tags populares:</small>
+                  <div class="d-flex flex-wrap gap-1">
+                    <% popularTags.forEach(tag => { %>
+                      <button type="button" class="btn btn-sm btn-outline-info rounded-pill py-0 px-2" onclick="addTag('<%= tag.name %>')">
+                        #<%= tag.name %> <span class="badge bg-secondary"><%= tag.count %></span>
+                      </button>
+                    <% }) %>
+                  </div>
+                </div>
+              <% } %>
+            </div>
 
-        <div class="mb-3">
-          <label for="content" class="form-label text-light">Conteúdo</label>
-          <textarea id="content" name="content" rows="5" class="form-control bg-dark text-light border-secondary" required><%= guide.content %></textarea>
-        </div>
+            <div class="mb-3">
+              <label for="imageUrl" class="form-label text-light">URL da Imagem (Opcional)</label>
+              <input type="url" id="imageUrl" name="imageUrl" class="form-control bg-dark text-light border-secondary" value="<%= guide.imageUrl || '' %>">
+            </div>
 
-        <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-primary-custom w-100">Salvar Alterações</button>
-          <a href="/guides/<%= guide.id %>" class="btn btn-outline-secondary">Cancelar</a>
+            <div class="mb-3">
+              <label for="links" class="form-label text-light">Links & Referências (Opcional — um por linha)</label>
+              <textarea id="links" name="links" rows="2" class="form-control bg-dark text-light border-secondary"><%= guide.links && guide.links.length > 0 ? guide.links.join('\n') : (guide.videoUrl || '') %></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="content" class="form-label text-light">Conteúdo</label>
+              <textarea id="content" name="content" rows="5" class="form-control bg-dark text-light border-secondary" required><%= guide.content %></textarea>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary-custom w-100">Salvar Alterações</button>
+              <a href="/guides/<%= guide.id %>" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
+
+      <!-- COLUNA DE PRÉ-VISUALIZAÇÃO -->
+      <div class="col-12 col-lg-6 d-none" id="previewCol">
+        <div class="card p-3 bg-dark text-light border-info">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="badge bg-info text-dark">👁️ Pré-visualização em Tempo Real</span>
+            <button type="button" class="btn-close btn-close-white btn-sm" id="closePreviewBtn"></button>
+          </div>
+
+          <small class="text-light opacity-75 d-block mb-1">1. Visualização no Card (Central de Posts):</small>
+          <div class="card bg-dark text-light border-secondary p-3 mb-4" style="background-color: #141422 !important;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="badge bg-secondary" id="prevCardGame">🎮 <%= guide.game %></span>
+              <span class="badge bg-info text-dark" id="prevCardCat">📌 <%= guide.category || 'Guia' %></span>
+            </div>
+            <h5 class="mb-1" id="prevCardTitle"><%= guide.title %></h5>
+            <div id="prevCardTags" class="d-flex flex-wrap gap-1 mb-2"></div>
+            <p class="text-light opacity-75 small mb-0" id="prevCardContent"></p>
+          </div>
+
+          <small class="text-light opacity-75 d-block mb-1">2. Visualização Completa do Post:</small>
+          <div class="card bg-dark text-light border-secondary p-3" style="background-color: #141422 !important;">
+            <div class="d-flex flex-wrap gap-2 mb-2">
+              <span class="badge bg-secondary" id="prevFullGame">🎮 <%= guide.game %></span>
+              <span class="badge bg-info text-dark" id="prevFullCat">📌 <%= guide.category || 'Guia' %></span>
+            </div>
+            <h4 class="font-brand text-accent mb-2" id="prevFullTitle"><%= guide.title %></h4>
+            <div id="prevFullTags" class="d-flex flex-wrap gap-1 mb-3"></div>
+
+            <div id="prevFullImgBox" class="my-2 text-center d-none">
+              <img id="prevFullImg" src="" alt="Prévia" class="img-fluid rounded border border-secondary" style="max-height: 220px;">
+            </div>
+
+            <div id="prevFullYtBox" class="ratio ratio-16x9 my-2 d-none">
+              <iframe id="prevFullYt" src="" allowfullscreen class="rounded border border-secondary"></iframe>
+            </div>
+
+            <p class="text-light small mt-2 mb-2" id="prevFullContent" style="white-space: pre-line;"></p>
+
+            <div id="prevFullLinksBox" class="mt-2 pt-2 border-top border-secondary d-none">
+              <small class="text-light opacity-75 d-block mb-1">🔗 Links & Referências:</small>
+              <div id="prevFullLinksList" class="d-flex flex-column gap-1"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
   <script>
+    const mainContainer = document.getElementById('mainContainer');
+    const formCol = document.getElementById('formCol');
+    const previewCol = document.getElementById('previewCol');
+    const togglePreviewBtn = document.getElementById('togglePreviewBtn');
+    const closePreviewBtn = document.getElementById('closePreviewBtn');
+
+    function setPreviewState(open) {
+      if (open) {
+        mainContainer.style.maxWidth = '1140px';
+        formCol.classList.add('col-lg-6');
+        previewCol.classList.remove('d-none');
+        togglePreviewBtn.classList.replace('btn-outline-info', 'btn-info');
+        togglePreviewBtn.classList.add('text-dark');
+        togglePreviewBtn.textContent = '🙈 Ocultar Pré-visualização';
+      } else {
+        mainContainer.style.maxWidth = '650px';
+        formCol.classList.remove('col-lg-6');
+        previewCol.classList.add('d-none');
+        togglePreviewBtn.classList.replace('btn-info', 'btn-outline-info');
+        togglePreviewBtn.classList.remove('text-dark');
+        togglePreviewBtn.textContent = '👁️ Pré-visualizar Postagem';
+      }
+    }
+
+    let isPreviewOpen = false;
+    togglePreviewBtn.addEventListener('click', () => {
+      isPreviewOpen = !isPreviewOpen;
+      setPreviewState(isPreviewOpen);
+    });
+    closePreviewBtn.addEventListener('click', () => {
+      isPreviewOpen = false;
+      setPreviewState(false);
+    });
+
     const fandoms = <%- JSON.stringify(fandomOptions) %>;
     const gameSearch = document.getElementById('gameSearch');
     const gameHidden = document.getElementById('game');
@@ -94,33 +189,24 @@
     function renderFandomList(filterText) {
       const term = normalize(filterText.trim());
       fandomDropdown.innerHTML = '';
-
       let matches = term.length === 0
         ? [...fandoms].sort((a, b) => (a.isGeneral ? -1 : b.isGeneral ? 1 : b.count - a.count))
         : fandoms.filter(f => normalize(f.name).includes(term));
 
-      if (matches.length === 0) {
-        fandomDropdown.innerHTML = '<div class="list-group-item bg-dark text-muted small">Nenhum fandom encontrado.</div>';
-      } else {
-        matches.forEach(f => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center py-2';
-          const badge = f.isGeneral
-            ? '<span class="me-1">📌</span>'
-            : (f.official
-                ? '<span class="badge bg-info text-dark rounded-pill ms-1">✓ Oficial</span>'
-                : '<span class="badge bg-secondary rounded-pill ms-1">🌐 Comunidade</span>');
-          btn.innerHTML = `<span>${f.name} ${badge}</span><small class="text-muted">${f.count} posts</small>`;
-          btn.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            gameSearch.value = f.name;
-            gameHidden.value = f.name;
-            fandomDropdown.classList.add('d-none');
-          });
-          fandomDropdown.appendChild(btn);
+      matches.forEach(f => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center py-2';
+        btn.innerHTML = `<span>${f.name}</span><small class="text-light opacity-75">${f.count} posts</small>`;
+        btn.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          gameSearch.value = f.name;
+          gameHidden.value = f.name;
+          fandomDropdown.classList.add('d-none');
+          syncPostPreview();
         });
-      }
+        fandomDropdown.appendChild(btn);
+      });
       fandomDropdown.classList.remove('d-none');
     }
 
@@ -135,6 +221,7 @@
       } else {
         gameSearch.value = gameHidden.value || 'Geral';
       }
+      syncPostPreview();
     });
 
     clearGameBtn.addEventListener('click', () => {
@@ -159,10 +246,10 @@
         span.textContent = '#' + t;
         tagPreview.appendChild(span);
       });
+      syncPostPreview();
     }
 
     tagsInput.addEventListener('input', updateTagPreview);
-    updateTagPreview();
 
     function addTag(tagName) {
       const current = parseClientTags(tagsInput.value);
@@ -172,6 +259,94 @@
         updateTagPreview();
       }
     }
+
+    function selectCategory(catName) {
+      document.getElementById('category').value = catName;
+      syncPostPreview();
+    }
+
+    const titleIn = document.getElementById('title');
+    const catIn = document.getElementById('category');
+    const imgIn = document.getElementById('imageUrl');
+    const linksIn = document.getElementById('links');
+    const contentIn = document.getElementById('content');
+
+    function getYoutubeEmbed(url) {
+      const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+    }
+
+    function syncPostPreview() {
+      const titleVal = titleIn.value.trim() || 'Título da Postagem';
+      const catVal = '📌 ' + (catIn.value.trim() || 'Guia');
+      const gameVal = '🎮 ' + (gameHidden.value.trim() || 'Geral');
+      const contentVal = contentIn.value.trim() || 'Conteúdo...';
+      const imgVal = imgIn.value.trim();
+      const parsedTags = parseClientTags(tagsInput.value);
+
+      document.getElementById('prevCardTitle').textContent = titleVal;
+      document.getElementById('prevFullTitle').textContent = titleVal;
+      document.getElementById('prevCardCat').textContent = catVal;
+      document.getElementById('prevFullCat').textContent = catVal;
+      document.getElementById('prevCardGame').textContent = gameVal;
+      document.getElementById('prevFullGame').textContent = gameVal;
+      document.getElementById('prevCardContent').textContent = contentVal.length > 100 ? contentVal.substring(0, 100) + '...' : contentVal;
+      document.getElementById('prevFullContent').textContent = contentVal;
+
+      const cardTagsBox = document.getElementById('prevCardTags');
+      const fullTagsBox = document.getElementById('prevFullTags');
+      cardTagsBox.innerHTML = '';
+      fullTagsBox.innerHTML = '';
+      parsedTags.forEach(t => {
+        cardTagsBox.innerHTML += `<span class="text-accent font-monospace small">#${t}</span>`;
+        fullTagsBox.innerHTML += `<span class="badge bg-dark border border-info text-info">#${t}</span>`;
+      });
+
+      const imgBox = document.getElementById('prevFullImgBox');
+      const imgEl = document.getElementById('prevFullImg');
+      if (imgVal) {
+        imgEl.src = imgVal;
+        imgBox.classList.remove('d-none');
+      } else {
+        imgBox.classList.add('d-none');
+      }
+
+      const rawLinks = linksIn.value.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+      const linksBox = document.getElementById('prevFullLinksBox');
+      const linksList = document.getElementById('prevFullLinksList');
+      const ytBox = document.getElementById('prevFullYtBox');
+      const ytFrame = document.getElementById('prevFullYt');
+
+      linksList.innerHTML = '';
+      let firstYtEmbed = null;
+
+      if (rawLinks.length > 0) {
+        linksBox.classList.remove('d-none');
+        rawLinks.forEach(rawUrl => {
+          const fullUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : 'https://' + rawUrl;
+          if (!firstYtEmbed) firstYtEmbed = getYoutubeEmbed(fullUrl);
+          const item = document.createElement('div');
+          item.className = 'small text-info text-truncate';
+          item.textContent = '↗ ' + fullUrl;
+          linksList.appendChild(item);
+        });
+      } else {
+        linksBox.classList.add('d-none');
+      }
+
+      if (firstYtEmbed) {
+        ytFrame.src = firstYtEmbed;
+        ytBox.classList.remove('d-none');
+      } else {
+        ytFrame.src = '';
+        ytBox.classList.add('d-none');
+      }
+    }
+
+    [titleIn, catIn, imgIn, linksIn, contentIn].forEach(el => {
+      el.addEventListener('input', syncPostPreview);
+    });
+    updateTagPreview();
   </script>
   <%- include('partials/footer') %>
 </body>

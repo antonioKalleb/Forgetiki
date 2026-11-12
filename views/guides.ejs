@@ -5,11 +5,11 @@
   <%- include('partials/navbar') %>
   <main class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="font-brand text-accent m-0">Guias & Postagens</h1>
+      <h1 class="font-brand text-accent m-0">Central de Posts & Guias</h1>
       <a href="/guides/new" class="btn btn-primary-custom">+ Criar Postagem</a>
     </div>
 
-    <!-- CAIXA DE PESQUISA + TAGS POPULARES -->
+    <!-- CAIXA DE PESQUISA + FOCOS + TAGS POPULARES -->
     <div class="mb-4 p-3 bg-dark border border-secondary rounded">
       <form action="/guides" method="GET" class="mb-3">
         <div class="input-group">
@@ -17,7 +17,7 @@
             type="text" 
             name="q" 
             class="form-control bg-dark text-light border-secondary" 
-            placeholder="🔍 Pesquisar por título, jogo, conteúdo ou #tag..." 
+            placeholder="🔍 Pesquisar por título, jogo, foco, conteúdo ou #tag..." 
             value="<%= searchQuery %>"
             autocomplete="off"
           >
@@ -28,24 +28,42 @@
         </div>
       </form>
 
-      <% if (popularTags && popularTags.length > 0) { %>
-        <small class="text-muted d-block mb-2">Tags populares:</small>
+      <!-- FILTRO POR FOCO DA POSTAGEM -->
+      <div class="mb-3">
+        <small class="text-light opacity-75 d-block mb-2">Filtrar por foco da postagem:</small>
         <div class="d-flex flex-wrap gap-2">
-          <% popularTags.forEach(tag => { %>
-            <a href="/guides?tag=<%= encodeURIComponent(tag.name) %>" class="badge <%= activeTag === tag.name ? 'bg-warning text-dark' : 'bg-info text-dark' %> text-decoration-none">
-              #<%= tag.name %> (<%= tag.count %>)
+          <a href="/guides" class="badge <%= !activeCategory ? 'bg-light text-dark' : 'bg-dark border border-secondary text-light' %> text-decoration-none py-1 px-2">
+            Todos
+          </a>
+          <% postCategories.forEach(cat => { %>
+            <a href="/guides?category=<%= encodeURIComponent(cat.name) %>" class="badge <%= activeCategory === cat.name ? 'bg-warning text-dark' : 'bg-dark border border-info text-info' %> text-decoration-none py-1 px-2">
+              <%= cat.icon %> <%= cat.name %>
             </a>
           <% }) %>
+        </div>
+      </div>
+
+      <% if (popularTags && popularTags.length > 0) { %>
+        <div>
+          <small class="text-light opacity-75 d-block mb-2">Tags populares:</small>
+          <div class="d-flex flex-wrap gap-2">
+            <% popularTags.forEach(tag => { %>
+              <a href="/guides?tag=<%= encodeURIComponent(tag.name) %>" class="badge <%= activeTag === tag.name ? 'bg-warning text-dark' : 'bg-info text-dark' %> text-decoration-none">
+                #<%= tag.name %> (<%= tag.count %>)
+              </a>
+            <% }) %>
+          </div>
         </div>
       <% } %>
     </div>
 
     <!-- AVISO DE FILTRO ATIVO -->
-    <% if (searchQuery || activeTag || activeGame) { %>
+    <% if (searchQuery || activeTag || activeGame || activeCategory) { %>
       <div class="alert alert-info d-flex justify-content-between align-items-center py-2 mb-3">
         <span>
           Exibindo resultados para: 
           <% if (searchQuery) { %><strong>"<%= searchQuery %>"</strong> <% } %>
+          <% if (activeCategory) { %><strong>Foco: <%= activeCategory %></strong> <% } %>
           <% if (activeGame) { %><strong>Jogo: <%= activeGame %></strong> <% } %>
           <% if (activeTag) { %><strong>Tag: #<%= activeTag %></strong><% } %>
         </span>
@@ -66,6 +84,9 @@
                 <a href="/games/<%= encodeURIComponent(guide.game) %>" class="badge bg-secondary text-decoration-none">
                   🎮 <%= guide.game %>
                 </a>
+                <a href="/guides?category=<%= encodeURIComponent(guide.category || 'Guia') %>" class="badge bg-info text-dark text-decoration-none">
+                  📌 <%= guide.category || 'Guia' %>
+                </a>
               </div>
               <h4><%= guide.title %></h4>
 
@@ -77,7 +98,7 @@
                 </div>
               <% } %>
 
-              <p class="text-muted flex-grow-1"><%= guide.content.length > 100 ? guide.content.substring(0, 100) + '...' : guide.content %></p>
+              <p class="text-light opacity-75 flex-grow-1"><%= guide.content.length > 100 ? guide.content.substring(0, 100) + '...' : guide.content %></p>
               <a href="/guides/<%= guide.id %>" class="btn btn-outline-info btn-sm align-self-start mt-2">Ver completo →</a>
             </div>
           </div>
