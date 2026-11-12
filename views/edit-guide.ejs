@@ -3,28 +3,72 @@
 <%- include('partials/head') %>
 <body>
   <%- include('partials/navbar') %>
-  <main class="container my-5" style="max-width: 600px;">
+  <main class="container my-5" style="max-width: 650px;">
     <div class="card p-4 bg-dark text-light border-secondary">
       <h2 class="font-brand text-accent mb-4">Editar Guia</h2>
       
       <form action="/guides/<%= guide.id %>/edit" method="POST">
         <div class="mb-3">
-          <label for="title" class="form-label text-light">Título do Guia</label>
-          <input type="text" id="title" name="title" class="form-control bg-dark text-light border-secondary" value="<%= guide.title %>" required>
+          <label for="title" class="form-label text-light">Título</label>
+          <input type="text" id="title" name="title" class="form-control bg-dark text-light border-secondary" value="<%= guide.title %>" required autocomplete="off">
+        </div>
+
+        <div class="mb-3 position-relative">
+          <label for="gameSearch" class="form-label text-light">Fandom / Jogo</label>
+          <div class="input-group">
+            <input 
+              type="text" 
+              id="gameSearch" 
+              class="form-control bg-dark text-light border-secondary" 
+              value="<%= guide.game %>"
+              autocomplete="off"
+            >
+            <button type="button" id="clearGameBtn" class="btn btn-outline-secondary">✕</button>
+          </div>
+          <input type="hidden" id="game" name="game" value="<%= guide.game %>">
+
+          <div id="fandomDropdown" class="list-group position-absolute w-100 shadow border border-secondary d-none" style="max-height: 220px; overflow-y: auto; z-index: 1050; background-color: #161622;">
+          </div>
         </div>
 
         <div class="mb-3">
-          <label for="game" class="form-label text-light">Jogo / Fandom</label>
-          <select id="game" name="game" class="form-select bg-dark text-light border-secondary" required>
-            <option value="Chrono Trigger" <%= guide.game === 'Chrono Trigger' ? 'selected' : '' %>>Chrono Trigger</option>
-            <option value="Golden Sun" <%= guide.game === 'Golden Sun' ? 'selected' : '' %>>Golden Sun</option>
-            <option value="Vagrant Story" <%= guide.game === 'Vagrant Story' ? 'selected' : '' %>>Vagrant Story</option>
-            <option value="Okami" <%= guide.game === 'Okami' ? 'selected' : '' %>>Okami</option>
-          </select>
+          <label for="tags" class="form-label text-light">Tags (inicie cada tag com #)</label>
+          <input 
+            type="text" 
+            id="tags" 
+            name="tags" 
+            class="form-control bg-dark text-light border-secondary" 
+            value="<%= guide.tags && guide.tags.length > 0 ? guide.tags.map(t => '#' + t).join(' ') : '' %>"
+            autocomplete="off"
+          >
+          <div id="tagPreview" class="d-flex flex-wrap gap-1 mt-1"></div>
+          
+          <% if (popularTags && popularTags.length > 0) { %>
+            <div class="mt-2">
+              <small class="text-muted d-block mb-1">Tags populares:</small>
+              <div class="d-flex flex-wrap gap-1">
+                <% popularTags.forEach(tag => { %>
+                  <button type="button" class="btn btn-sm btn-outline-info rounded-pill py-0 px-2" onclick="addTag('<%= tag.name %>')">
+                    #<%= tag.name %> <span class="badge bg-secondary"><%= tag.count %></span>
+                  </button>
+                <% }) %>
+              </div>
+            </div>
+          <% } %>
         </div>
 
         <div class="mb-3">
-          <label for="content" class="form-label text-light">Conteúdo do Guia</label>
+          <label for="imageUrl" class="form-label text-light">URL da Imagem</label>
+          <input type="url" id="imageUrl" name="imageUrl" class="form-control bg-dark text-light border-secondary" value="<%= guide.imageUrl %>">
+        </div>
+
+        <div class="mb-3">
+          <label for="videoUrl" class="form-label text-light">Link do Vídeo do YouTube</label>
+          <input type="url" id="videoUrl" name="videoUrl" class="form-control bg-dark text-light border-secondary" value="<%= guide.videoUrl %>">
+        </div>
+
+        <div class="mb-3">
+          <label for="content" class="form-label text-light">Conteúdo</label>
           <textarea id="content" name="content" rows="5" class="form-control bg-dark text-light border-secondary" required><%= guide.content %></textarea>
         </div>
 
@@ -35,6 +79,100 @@
       </form>
     </div>
   </main>
+
+  <script>
+    const fandoms = <%- JSON.stringify(fandomOptions) %>;
+    const gameSearch = document.getElementById('gameSearch');
+    const gameHidden = document.getElementById('game');
+    const fandomDropdown = document.getElementById('fandomDropdown');
+    const clearGameBtn = document.getElementById('clearGameBtn');
+
+    function normalize(str) {
+      return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function renderFandomList(filterText) {
+      const term = normalize(filterText.trim());
+      fandomDropdown.innerHTML = '';
+
+      let matches = term.length === 0
+        ? [...fandoms].sort((a, b) => (a.isGeneral ? -1 : b.isGeneral ? 1 : b.count - a.count))
+        : fandoms.filter(f => normalize(f.name).includes(term));
+
+      if (matches.length === 0) {
+        fandomDropdown.innerHTML = '<div class="list-group-item bg-dark text-muted small">Nenhum fandom encontrado.</div>';
+      } else {
+        matches.forEach(f => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center py-2';
+          const badge = f.isGeneral
+            ? '<span class="me-1">📌</span>'
+            : (f.official
+                ? '<span class="badge bg-info text-dark rounded-pill ms-1">✓ Oficial</span>'
+                : '<span class="badge bg-secondary rounded-pill ms-1">🌐 Comunidade</span>');
+          btn.innerHTML = `<span>${f.name} ${badge}</span><small class="text-muted">${f.count} posts</small>`;
+          btn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            gameSearch.value = f.name;
+            gameHidden.value = f.name;
+            fandomDropdown.classList.add('d-none');
+          });
+          fandomDropdown.appendChild(btn);
+        });
+      }
+      fandomDropdown.classList.remove('d-none');
+    }
+
+    gameSearch.addEventListener('focus', () => renderFandomList(''));
+    gameSearch.addEventListener('input', () => renderFandomList(gameSearch.value));
+    gameSearch.addEventListener('blur', () => {
+      fandomDropdown.classList.add('d-none');
+      const valid = fandoms.find(f => normalize(f.name) === normalize(gameSearch.value.trim()));
+      if (valid) {
+        gameSearch.value = valid.name;
+        gameHidden.value = valid.name;
+      } else {
+        gameSearch.value = gameHidden.value || 'Geral';
+      }
+    });
+
+    clearGameBtn.addEventListener('click', () => {
+      gameSearch.value = '';
+      gameSearch.focus();
+      renderFandomList('');
+    });
+
+    const tagsInput = document.getElementById('tags');
+    const tagPreview = document.getElementById('tagPreview');
+
+    function parseClientTags(raw) {
+      return raw.split('#').map(t => t.trim().replace(/\s+/g, '_')).filter(t => t.length > 0);
+    }
+
+    function updateTagPreview() {
+      const parsed = parseClientTags(tagsInput.value);
+      tagPreview.innerHTML = '';
+      parsed.forEach(t => {
+        const span = document.createElement('span');
+        span.className = 'badge bg-secondary font-monospace';
+        span.textContent = '#' + t;
+        tagPreview.appendChild(span);
+      });
+    }
+
+    tagsInput.addEventListener('input', updateTagPreview);
+    updateTagPreview();
+
+    function addTag(tagName) {
+      const current = parseClientTags(tagsInput.value);
+      if (!current.includes(tagName)) {
+        current.push(tagName);
+        tagsInput.value = current.map(t => '#' + t).join(' ') + ' ';
+        updateTagPreview();
+      }
+    }
+  </script>
   <%- include('partials/footer') %>
 </body>
 </html>

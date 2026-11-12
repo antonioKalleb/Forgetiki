@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<%- include('partials/head') %>
+<body>
+  <%- include('partials/navbar') %>
+  <main class="container my-5" style="max-width: 620px;">
+    <a href="/games" class="btn btn-outline-secondary btn-sm mb-3">← Voltar para Fandoms</a>
+
+    <div class="card p-4 bg-dark text-light border-secondary">
+      <h2 class="font-brand text-accent mb-2">Criar Fandom da Comunidade</h2>
+      <p class="text-muted small mb-4">Crie uma página wiki dedicada para um jogo que ainda não está na lista oficial.</p>
+
+      <% if (error) { %>
+        <div class="alert alert-danger py-2"><%= error %></div>
+      <% } %>
+
+      <form action="/games" method="POST">
+        <div class="mb-3">
+          <label for="name" class="form-label text-light">Nome Exato do Jogo</label>
+          <input type="text" id="name" name="name" class="form-control bg-dark text-light border-secondary" placeholder="Ex: Darkest Dungeon, Lisa: The Painful..." required>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="genre" class="form-label text-light">Gênero</label>
+            <input type="text" id="genre" name="genre" class="form-control bg-dark text-light border-secondary" placeholder="Ex: RPG, Roguelike..." required>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="difficulty" class="form-label text-light">Nível de Dificuldade</label>
+            <select id="difficulty" name="difficulty" class="form-select bg-dark text-light border-secondary">
+              <option value="Média">Média</option>
+              <option value="Alta" selected>Alta</option>
+              <option value="Muito Alta">Muito Alta</option>
+              <option value="Extrema">Extrema</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- CAMPO DE IMAGEM / MINIATURA ESTILO DISCORD -->
+        <div class="mb-3">
+          <label for="imageUrl" class="form-label text-light">URL da Imagem / Miniatura do Jogo (Opcional)</label>
+          <div class="d-flex gap-3 align-items-center">
+            <input type="url" id="imageUrl" name="imageUrl" class="form-control bg-dark text-light border-secondary" placeholder="https://exemplo.com/capa.jpg">
+            <div id="thumbPreviewBox" class="rounded border border-secondary d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden" style="width: 64px; height: 64px; background-color: #12121c;">
+              <span class="text-muted small">🎮</span>
+            </div>
+          </div>
+          <small class="text-muted">Aparecerá como miniatura no canto do card (estilo embed do Discord).</small>
+        </div>
+
+        <div class="mb-3">
+          <label for="description" class="form-label text-light">Resumo da Wiki / Sobre o Jogo</label>
+          <textarea id="description" name="description" rows="4" class="form-control bg-dark text-light border-secondary" placeholder="Explique brevemente a proposta do jogo e o foco desta comunidade..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary-custom w-100">Criar Fandom</button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const imgInput = document.getElementById('imageUrl');
+    const previewBox = document.getElementById('thumbPreviewBox');
+
+    imgInput.addEventListener('input', () => {
+      const url = imgInput.value.trim();
+      if (url) {
+        previewBox.innerHTML = `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span class=\\'text-danger small\\'>Erro</span>'">`;
+      } else {
+        previewBox.innerHTML = '<span class="text-muted small">🎮</span>';
+      }
+    });
+  </script>
+  <%- include('partials/footer') %>
+</body>
+</html>

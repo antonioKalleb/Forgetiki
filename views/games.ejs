@@ -4,25 +4,165 @@
 <body>
   <%- include('partials/navbar') %>
   <main class="container my-5">
-    <h1 class="font-brand text-accent mb-4">Fandoms & Jogos Cadastrados</h1>
-    <p class="text-muted mb-4">Comunidades de jogos desafiadores, cults e subestimados.</p>
+    <div class="mb-3">
+      <h1 class="font-brand text-accent m-0">Fandoms & Wikis</h1>
+      <p class="text-muted m-0">Explore wikis oficiais verificadas e comunidades criadas pelos usuários.</p>
+    </div>
 
-    <div class="row g-4">
+    <!-- BARRA DE PESQUISA + FILTROS DE VISIBILIDADE -->
+    <div class="card p-3 bg-dark border-secondary mb-3">
+      <div class="row g-2 align-items-center">
+        <div class="col-12 col-md-7">
+          <div class="input-group">
+            <input 
+              type="text" 
+              id="fandomSearchInput" 
+              class="form-control bg-dark text-light border-secondary" 
+              placeholder="🔍 Pesquisar fandom por nome, gênero ou descrição..." 
+              autocomplete="off"
+            >
+            <button type="button" id="clearFandomSearch" class="btn btn-outline-secondary d-none">✕</button>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-5 d-flex flex-wrap justify-content-md-end gap-3 align-items-center">
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="toggleOfficial" checked>
+            <label class="form-check-label text-light small" for="toggleOfficial">
+              <span class="badge bg-info text-dark rounded-pill">✓</span> Oficiais
+            </label>
+          </div>
+
+          <div class="form-check form-switch m-0">
+            <input class="form-check-input" type="checkbox" id="toggleCommunity" checked>
+            <label class="form-check-label text-light small" for="toggleCommunity">
+              🌐 Comunidade
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <a href="/games/new" class="btn btn-primary-custom">+ Criar Fandom da Comunidade</a>
+    </div>
+
+    <!-- LISTA MESCLADA COM LAYOUT EMBED DISCORD -->
+    <div class="row g-4" id="fandomsGrid">
       <% games.forEach(game => { %>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="card bg-dark text-light border-secondary h-100 p-3">
+        <div 
+          class="col-12 col-md-6 col-lg-4 fandom-card-wrapper" 
+          data-type="<%= game.isOfficial ? 'official' : 'community' %>"
+          data-search="<%= (game.name + ' ' + game.genre + ' ' + game.description).toLowerCase() %>"
+        >
+          <div class="card bg-dark text-light border-secondary border-start border-4 <%= game.isOfficial ? 'border-info' : 'border-secondary' %> h-100 p-3 d-flex flex-column">
+            
+            <!-- Topo com badges -->
             <div class="d-flex justify-content-between align-items-center mb-2">
               <span class="badge bg-danger">Dificuldade: <%= game.difficulty %></span>
-              <small class="text-muted"><%= game.genre %></small>
+              <span class="badge bg-info text-dark"><%= game.guideCount %> <%= game.guideCount === 1 ? 'post' : 'posts' %></span>
             </div>
-            <h4 class="text-accent font-brand"><%= game.name %></h4>
-            <p class="text-muted small flex-grow-1"><%= game.description %></p>
-            <a href="/guides/new" class="btn btn-outline-cyan btn-sm mt-2">Criar Guia para este Jogo</a>
+
+            <!-- Corpo estilo Discord Embed: Informações à esquerda + Miniatura à direita -->
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-grow-1">
+              <div class="flex-grow-1" style="min-width: 0;">
+                <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+                  <h4 class="text-accent font-brand m-0 text-truncate"><%= game.name %></h4>
+                  <% if (game.isOfficial) { %>
+                    <span class="badge bg-info text-dark rounded-pill px-2" title="Fandom Oficial Verificado" style="font-size: 0.7rem;">
+                      ✓ Verificado
+                    </span>
+                  <% } else { %>
+                    <span class="badge bg-secondary rounded-pill px-2" style="font-size: 0.7rem;">
+                      🌐 Comunidade
+                    </span>
+                  <% } %>
+                </div>
+
+                <small class="text-muted d-block mb-2"><%= game.genre %></small>
+                <p class="text-light small mb-0" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                  <%= game.description %>
+                </p>
+              </div>
+
+              <!-- MINIATURA DO JOGO (ESTILO DISCORD) -->
+              <div class="rounded border border-secondary flex-shrink-0 overflow-hidden d-flex align-items-center justify-content-center" style="width: 78px; height: 78px; background-color: #12121c;">
+                <% if (game.imageUrl) { %>
+                  <img 
+                    src="<%= game.imageUrl %>" 
+                    alt="<%= game.name %>" 
+                    style="width: 100%; height: 100%; object-fit: cover;"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                  >
+                  <span style="display: none; font-size: 1.8rem;">🎮</span>
+                <% } else { %>
+                  <span style="font-size: 1.8rem;">🎮</span>
+                <% } %>
+              </div>
+            </div>
+
+            <!-- Rodapé com ações -->
+            <div class="d-flex gap-2 mt-3 pt-2 border-top border-secondary">
+              <a href="/games/<%= encodeURIComponent(game.name) %>" class="btn btn-primary-custom btn-sm flex-grow-1">Abrir Wiki →</a>
+              <a href="/guides/new?game=<%= encodeURIComponent(game.name) %>" class="btn btn-outline-info btn-sm">+ Postar</a>
+            </div>
           </div>
         </div>
       <% }) %>
     </div>
+
+    <div id="noFandomsMsg" class="alert alert-secondary bg-dark text-light border-secondary mt-3 d-none">
+      Nenhum fandom encontrado com os filtros atuais.
+    </div>
   </main>
+
+  <script>
+    const searchInput = document.getElementById('fandomSearchInput');
+    const clearBtn = document.getElementById('clearFandomSearch');
+    const toggleOfficial = document.getElementById('toggleOfficial');
+    const toggleCommunity = document.getElementById('toggleCommunity');
+    const cards = document.querySelectorAll('.fandom-card-wrapper');
+    const noFandomsMsg = document.getElementById('noFandomsMsg');
+
+    function normalize(str) {
+      return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function filterFandoms() {
+      const term = normalize(searchInput.value.trim());
+      const showOfficial = toggleOfficial.checked;
+      const showCommunity = toggleCommunity.checked;
+
+      clearBtn.classList.toggle('d-none', term.length === 0);
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const type = card.dataset.type;
+        const searchable = normalize(card.dataset.search);
+
+        const matchesType = (type === 'official' && showOfficial) || (type === 'community' && showCommunity);
+        const matchesSearch = term.length === 0 || searchable.includes(term);
+
+        if (matchesType && matchesSearch) {
+          card.classList.remove('d-none');
+          visibleCount++;
+        } else {
+          card.classList.add('d-none');
+        }
+      });
+
+      noFandomsMsg.classList.toggle('d-none', visibleCount > 0);
+    }
+
+    searchInput.addEventListener('input', filterFandoms);
+    toggleOfficial.addEventListener('change', filterFandoms);
+    toggleCommunity.addEventListener('change', filterFandoms);
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      filterFandoms();
+      searchInput.focus();
+    });
+  </script>
   <%- include('partials/footer') %>
 </body>
 </html>

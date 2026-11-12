@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<%- include('partials/head') %>
+<body>
+  <%- include('partials/navbar') %>
+  <main class="container my-5" style="max-width: 620px;">
+    <a href="/games/<%= encodeURIComponent(fandom.name) %>" class="btn btn-outline-secondary btn-sm mb-3">← Voltar para Wiki</a>
+
+    <div class="card p-4 bg-dark text-light border-secondary">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="font-brand text-accent m-0">Editar Fandom</h2>
+        <span class="badge bg-secondary">Visão: Criador / Admin</span>
+      </div>
+      <p class="text-muted small mb-4">Altere as informações, imagem de miniatura ou descrição desta comunidade.</p>
+
+      <% if (error) { %>
+        <div class="alert alert-danger py-2"><%= error %></div>
+      <% } %>
+
+      <form action="/games/<%= encodeURIComponent(fandom.name) %>/edit" method="POST">
+        <div class="mb-3">
+          <label for="name" class="form-label text-light">Nome do Jogo</label>
+          <input type="text" id="name" name="name" class="form-control bg-dark text-light border-secondary" value="<%= fandom.name %>" required>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="genre" class="form-label text-light">Gênero</label>
+            <input type="text" id="genre" name="genre" class="form-control bg-dark text-light border-secondary" value="<%= fandom.genre %>" required>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="difficulty" class="form-label text-light">Nível de Dificuldade</label>
+            <select id="difficulty" name="difficulty" class="form-select bg-dark text-light border-secondary">
+              <option value="Média" <%= fandom.difficulty === 'Média' ? 'selected' : '' %>>Média</option>
+              <option value="Alta" <%= fandom.difficulty === 'Alta' ? 'selected' : '' %>>Alta</option>
+              <option value="Muito Alta" <%= fandom.difficulty === 'Muito Alta' ? 'selected' : '' %>>Muito Alta</option>
+              <option value="Extrema" <%= fandom.difficulty === 'Extrema' ? 'selected' : '' %>>Extrema</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="imageUrl" class="form-label text-light">URL da Imagem / Miniatura</label>
+          <div class="d-flex gap-3 align-items-center">
+            <input type="url" id="imageUrl" name="imageUrl" class="form-control bg-dark text-light border-secondary" value="<%= fandom.imageUrl || '' %>" placeholder="https://...">
+            <div id="thumbPreviewBox" class="rounded border border-secondary d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden" style="width: 64px; height: 64px; background-color: #12121c;">
+              <% if (fandom.imageUrl) { %>
+                <img src="<%= fandom.imageUrl %>" style="width: 100%; height: 100%; object-fit: cover;">
+              <% } else { %>
+                <span class="text-muted small">🎮</span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="description" class="form-label text-light">Resumo da Wiki / Sobre o Jogo</label>
+          <textarea id="description" name="description" rows="4" class="form-control bg-dark text-light border-secondary" required><%= fandom.description %></textarea>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary-custom w-100">Salvar Alterações</button>
+          <a href="/games/<%= encodeURIComponent(fandom.name) %>" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const imgInput = document.getElementById('imageUrl');
+    const previewBox = document.getElementById('thumbPreviewBox');
+
+    imgInput.addEventListener('input', () => {
+      const url = imgInput.value.trim();
+      if (url) {
+        previewBox.innerHTML = `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<span class=\\'text-danger small\\'>Erro</span>'">`;
+      } else {
+        previewBox.innerHTML = '<span class="text-muted small">🎮</span>';
+      }
+    });
+  </script>
+  <%- include('partials/footer') %>
+</body>
+</html>

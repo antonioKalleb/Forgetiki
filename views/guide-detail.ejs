@@ -4,11 +4,23 @@
 <body>
   <%- include('partials/navbar') %>
   <main class="container my-5" style="max-width: 800px;">
-    <a href="/guides" class="btn btn-outline-secondary mb-3">← Voltar para Guias</a>
+    <a href="/guides" class="btn btn-outline-secondary mb-3">← Voltar</a>
     
     <article class="card p-4 bg-dark text-light border-secondary mb-4">
-      <span class="badge bg-secondary w-auto mb-2 align-self-start"><%= guide.game %></span>
-      <h1 class="font-brand text-accent mb-3"><%= guide.title %></h1>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="badge bg-secondary"><%= guide.game %></span>
+      </div>
+
+      <h1 class="font-brand text-accent mb-2"><%= guide.title %></h1>
+
+      <!-- TAGS DA POSTAGEM -->
+      <% if (guide.tags && guide.tags.length > 0) { %>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <% guide.tags.forEach(t => { %>
+            <span class="badge bg-outline-info border border-info text-cyan">#<%= t %></span>
+          <% }) %>
+        </div>
+      <% } %>
       
       <% if (guide.imageUrl) { %>
         <img src="<%= guide.imageUrl %>" class="img-fluid rounded mb-3 border border-secondary" style="max-height: 400px; object-fit: cover;" alt="Imagem do guia">
@@ -32,22 +44,20 @@
       </div>
     </article>
 
-    <!-- ÁREA DE CHAT / COMENTÁRIOS -->
+    <!-- CHAT DA POSTAGEM -->
     <section class="card p-4 bg-dark text-light border-secondary">
       <h3 class="font-brand text-accent mb-3">💬 Comentários (<%= guide.comments.length %>)</h3>
 
-      <!-- Form para enviar comentário -->
       <form action="/guides/<%= guide.id %>/comments" method="POST" class="mb-4">
         <div class="mb-2">
           <input type="text" name="author" class="form-control bg-dark text-light border-secondary" placeholder="Seu Nome / Usuário" required>
         </div>
         <div class="mb-2">
-          <textarea name="text" rows="2" class="form-control bg-dark text-light border-secondary" placeholder="Escreva seu comentário ou dúvida..." required></textarea>
+          <textarea name="text" rows="2" class="form-control bg-dark text-light border-secondary" placeholder="Escreva seu comentário..." required></textarea>
         </div>
         <button type="submit" class="btn btn-primary-custom btn-sm">Enviar Comentário</button>
       </form>
 
-      <!-- Lista de Comentários -->
       <div class="d-flex flex-column gap-3">
         <% if (guide.comments.length === 0) { %>
           <p class="text-muted m-0">Nenhum comentário ainda. Seja o primeiro a comentar!</p>

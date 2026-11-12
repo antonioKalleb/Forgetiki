@@ -3,29 +3,72 @@
 <%- include('partials/head') %>
 <body>
   <%- include('partials/navbar') %>
-  <main class="container my-5" style="max-width: 600px;">
+  <main class="container my-5" style="max-width: 650px;">
     <div class="card p-4 bg-dark text-light border-secondary">
-      <h2 class="font-brand text-accent mb-4">Publicar Novo Guia</h2>
+      <h2 class="font-brand text-accent mb-4">Publicar Novo Guia ou Post</h2>
       
       <form action="/guides" method="POST">
         <div class="mb-3">
-          <label for="title" class="form-label text-light">Título do Guia</label>
-          <input type="text" id="title" name="title" class="form-control bg-dark text-light border-secondary" required>
+          <label for="title" class="form-label text-light">Título da Postagem</label>
+          <input type="text" id="title" name="title" class="form-control bg-dark text-light border-secondary" placeholder="Ex: Dicas para derrotar o primeiro Boss" required autocomplete="off">
         </div>
 
+        <!-- BUSCADOR DE FANDOM COM SCROLL E SELO OFICIAL -->
+        <div class="mb-3 position-relative">
+          <label for="gameSearch" class="form-label text-light">Fandom / Jogo</label>
+          <div class="input-group">
+            <input 
+              type="text" 
+              id="gameSearch" 
+              class="form-control bg-dark text-light border-secondary" 
+              placeholder="Pesquisar fandom (ex: Fear & Hunger, Kenshi)..." 
+              value="<%= selectedGame %>"
+              autocomplete="off"
+            >
+            <button type="button" id="clearGameBtn" class="btn btn-outline-secondary" title="Trocar fandom">✕</button>
+          </div>
+          <input type="hidden" id="game" name="game" value="<%= selectedGame %>">
+
+          <!-- Lista suspensa com altura limitada e scroll -->
+          <div id="fandomDropdown" class="list-group position-absolute w-100 shadow border border-secondary d-none" style="max-height: 220px; overflow-y: auto; z-index: 1050; background-color: #161622;">
+          </div>
+
+          <small class="text-muted">
+            <span class="text-info">✓</span> Fandom Oficial &nbsp;|&nbsp; 🌐 Comunidade &nbsp;•&nbsp;
+            <a href="/games/new" class="text-accent">Criar novo Fandom</a>
+          </small>
+        </div>
+
+        <!-- CAMPO DE TAGS COM # E CONVERSÃO DE ESPAÇOS PARA _ -->
         <div class="mb-3">
-          <label for="game" class="form-label text-light">Jogo / Fandom</label>
-          <select id="game" name="game" class="form-select bg-dark text-light border-secondary" required>
-            <option value="" disabled selected>Selecione um jogo...</option>
-            <% games.forEach(g => { %>
-              <option value="<%= g %>"><%= g %></option>
-            <% }) %>
-          </select>
+          <label for="tags" class="form-label text-light">Tags (inicie cada tag com #)</label>
+          <input 
+            type="text" 
+            id="tags" 
+            name="tags" 
+            class="form-control bg-dark text-light border-secondary" 
+            placeholder="#dicas_iniciante #boss_final #segredo"
+            autocomplete="off"
+          >
+          <div id="tagPreview" class="d-flex flex-wrap gap-1 mt-1"></div>
+          
+          <% if (popularTags && popularTags.length > 0) { %>
+            <div class="mt-2">
+              <small class="text-muted d-block mb-1">Tags populares (clique para inserir):</small>
+              <div class="d-flex flex-wrap gap-1">
+                <% popularTags.forEach(tag => { %>
+                  <button type="button" class="btn btn-sm btn-outline-info rounded-pill py-0 px-2" onclick="addTag('<%= tag.name %>')">
+                    #<%= tag.name %> <span class="badge bg-secondary"><%= tag.count %></span>
+                  </button>
+                <% }) %>
+              </div>
+            </div>
+          <% } %>
         </div>
 
         <div class="mb-3">
           <label for="imageUrl" class="form-label text-light">URL da Imagem (Opcional)</label>
-          <input type="url" id="imageUrl" name="imageUrl" placeholder="https://exemplo.com/imagem.jpg" class="form-control bg-dark text-light border-secondary">
+          <input type="url" id="imageUrl" name="imageUrl" placeholder="https://..." class="form-control bg-dark text-light border-secondary">
         </div>
 
         <div class="mb-3">
@@ -34,14 +77,141 @@
         </div>
 
         <div class="mb-3">
-          <label for="content" class="form-label text-light">Conteúdo do Guia</label>
+          <label for="content" class="form-label text-light">Conteúdo</label>
           <textarea id="content" name="content" rows="5" class="form-control bg-dark text-light border-secondary" required></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary-custom w-100">Publicar Guia</button>
+        <button type="submit" class="btn btn-primary-custom w-100">Publicar</button>
       </form>
     </div>
   </main>
+
+  <script>
+    const fandoms = <%- JSON.stringify(fandomOptions) %>;
+    const gameSearch = document.getElementById('gameSearch');
+    const gameHidden = document.getElementById('game');
+    const fandomDropdown = document.getElementById('fandomDropdown');
+    const clearGameBtn = document.getElementById('clearGameBtn');
+
+    function normalize(str) {
+      return (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function renderFandomList(filterText) {
+      const term = normalize(filterText.trim());
+      fandomDropdown.innerHTML = '';
+
+      let matches = fandoms;
+      const isShowingSuggestions = term.length === 0;
+
+      if (isShowingSuggestions) {
+        // Ordena por popularidade (mais posts primeiro) mantendo Geral no topo
+        matches = [...fandoms].sort((a, b) => {
+          if (a.isGeneral) return -1;
+          if (b.isGeneral) return 1;
+          return b.count - a.count;
+        });
+
+        const header = document.createElement('div');
+        header.className = 'px-3 py-1 small text-muted border-bottom border-secondary';
+        header.style.backgroundColor = '#1e1e2e';
+        header.textContent = '🔥 Sugestões populares (digite para filtrar)';
+        fandomDropdown.appendChild(header);
+      } else {
+        matches = fandoms.filter(f => normalize(f.name).includes(term));
+      }
+
+      if (matches.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'list-group-item bg-dark text-muted small';
+        empty.textContent = 'Nenhum fandom encontrado com esse nome.';
+        fandomDropdown.appendChild(empty);
+      } else {
+        matches.forEach(f => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'list-group-item list-group-item-action bg-dark text-light border-secondary d-flex justify-content-between align-items-center py-2';
+          
+          const badge = f.isGeneral
+            ? '<span class="me-1">📌</span>'
+            : (f.official
+                ? '<span class="badge bg-info text-dark rounded-pill ms-1" title="Fandom Oficial">✓ Oficial</span>'
+                : '<span class="badge bg-secondary rounded-pill ms-1">🌐 Comunidade</span>');
+
+          btn.innerHTML = `
+            <span>${f.name} ${badge}</span>
+            <small class="text-muted">${f.count} ${f.count === 1 ? 'post' : 'posts'}</small>
+          `;
+
+          btn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            gameSearch.value = f.name;
+            gameHidden.value = f.name;
+            fandomDropdown.classList.add('d-none');
+          });
+
+          fandomDropdown.appendChild(btn);
+        });
+      }
+
+      fandomDropdown.classList.remove('d-none');
+    }
+
+    gameSearch.addEventListener('focus', () => renderFandomList(''));
+    gameSearch.addEventListener('input', () => renderFandomList(gameSearch.value));
+    gameSearch.addEventListener('blur', () => {
+      fandomDropdown.classList.add('d-none');
+      // Garante que apenas um fandom válido fique selecionado
+      const valid = fandoms.find(f => normalize(f.name) === normalize(gameSearch.value.trim()));
+      if (valid) {
+        gameSearch.value = valid.name;
+        gameHidden.value = valid.name;
+      } else {
+        gameSearch.value = gameHidden.value || 'Geral';
+      }
+    });
+
+    clearGameBtn.addEventListener('click', () => {
+      gameSearch.value = '';
+      gameSearch.focus();
+      renderFandomList('');
+    });
+
+    // Parser e pré-visualização ao vivo de #tags
+    const tagsInput = document.getElementById('tags');
+    const tagPreview = document.getElementById('tagPreview');
+
+    function parseClientTags(raw) {
+      return raw
+        .split('#')
+        .map(t => t.trim().replace(/\s+/g, '_'))
+        .filter(t => t.length > 0);
+    }
+
+    function updateTagPreview() {
+      const parsed = parseClientTags(tagsInput.value);
+      tagPreview.innerHTML = '';
+      if (parsed.length > 0) {
+        parsed.forEach(t => {
+          const span = document.createElement('span');
+          span.className = 'badge bg-secondary font-monospace';
+          span.textContent = '#' + t;
+          tagPreview.appendChild(span);
+        });
+      }
+    }
+
+    tagsInput.addEventListener('input', updateTagPreview);
+
+    function addTag(tagName) {
+      const current = parseClientTags(tagsInput.value);
+      if (!current.includes(tagName)) {
+        current.push(tagName);
+        tagsInput.value = current.map(t => '#' + t).join(' ') + ' ';
+        updateTagPreview();
+      }
+    }
+  </script>
   <%- include('partials/footer') %>
 </body>
 </html>

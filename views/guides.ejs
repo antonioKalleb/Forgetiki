@@ -4,22 +4,81 @@
 <body>
   <%- include('partials/navbar') %>
   <main class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="font-brand text-accent m-0">Guias & Dicas</h1>
-      <a href="/guides/new" class="btn btn-primary-custom">+ Criar Guia</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="font-brand text-accent m-0">Guias & Postagens</h1>
+      <a href="/guides/new" class="btn btn-primary-custom">+ Criar Postagem</a>
     </div>
+
+    <!-- CAIXA DE PESQUISA + TAGS POPULARES -->
+    <div class="mb-4 p-3 bg-dark border border-secondary rounded">
+      <form action="/guides" method="GET" class="mb-3">
+        <div class="input-group">
+          <input 
+            type="text" 
+            name="q" 
+            class="form-control bg-dark text-light border-secondary" 
+            placeholder="🔍 Pesquisar por título, jogo, conteúdo ou #tag..." 
+            value="<%= searchQuery %>"
+            autocomplete="off"
+          >
+          <% if (searchQuery) { %>
+            <a href="/guides" class="btn btn-outline-secondary" title="Limpar busca">✕</a>
+          <% } %>
+          <button type="submit" class="btn btn-primary-custom">Buscar</button>
+        </div>
+      </form>
+
+      <% if (popularTags && popularTags.length > 0) { %>
+        <small class="text-muted d-block mb-2">Tags populares:</small>
+        <div class="d-flex flex-wrap gap-2">
+          <% popularTags.forEach(tag => { %>
+            <a href="/guides?tag=<%= encodeURIComponent(tag.name) %>" class="badge <%= activeTag === tag.name ? 'bg-warning text-dark' : 'bg-info text-dark' %> text-decoration-none">
+              #<%= tag.name %> (<%= tag.count %>)
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- AVISO DE FILTRO ATIVO -->
+    <% if (searchQuery || activeTag || activeGame) { %>
+      <div class="alert alert-info d-flex justify-content-between align-items-center py-2 mb-3">
+        <span>
+          Exibindo resultados para: 
+          <% if (searchQuery) { %><strong>"<%= searchQuery %>"</strong> <% } %>
+          <% if (activeGame) { %><strong>Jogo: <%= activeGame %></strong> <% } %>
+          <% if (activeTag) { %><strong>Tag: #<%= activeTag %></strong><% } %>
+        </span>
+        <a href="/guides" class="btn btn-sm btn-dark">✕ Limpar Filtros</a>
+      </div>
+    <% } %>
 
     <div class="row g-4">
       <% if (guides.length === 0) { %>
-        <p class="text-light">Nenhum guia cadastrado ainda.</p>
+        <div class="col-12">
+          <p class="text-light">Nenhuma postagem encontrada para esta busca.</p>
+        </div>
       <% } else { %>
         <% guides.forEach(guide => { %>
           <div class="col-12 col-md-6">
             <div class="card bg-dark text-light border-secondary p-3 h-100 d-flex flex-column">
-              <span class="badge bg-secondary w-auto mb-2 align-self-start"><%= guide.game %></span>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <a href="/games/<%= encodeURIComponent(guide.game) %>" class="badge bg-secondary text-decoration-none">
+                  🎮 <%= guide.game %>
+                </a>
+              </div>
               <h4><%= guide.title %></h4>
+
+              <% if (guide.tags && guide.tags.length > 0) { %>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                  <% guide.tags.forEach(t => { %>
+                    <a href="/guides?tag=<%= encodeURIComponent(t) %>" class="text-accent font-monospace small text-decoration-none">#<%= t %></a>
+                  <% }) %>
+                </div>
+              <% } %>
+
               <p class="text-muted flex-grow-1"><%= guide.content.length > 100 ? guide.content.substring(0, 100) + '...' : guide.content %></p>
-              <a href="/guides/<%= guide.id %>" class="btn btn-outline-cyan align-self-start">Ler guia completo →</a>
+              <a href="/guides/<%= guide.id %>" class="btn btn-outline-info btn-sm align-self-start mt-2">Ver completo →</a>
             </div>
           </div>
         <% }) %>

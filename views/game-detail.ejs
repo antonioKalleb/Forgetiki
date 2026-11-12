@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<%- include('partials/head') %>
+<body>
+  <%- include('partials/navbar') %>
+  <main class="container my-5">
+
+    <!-- MENSAGENS DE RETORNO (DENÚNCIA, SUGESTÃO OU EDIÇÃO) -->
+    <% if (feedback === 'suggested') { %>
+      <div class="alert alert-info alert-dismissible fade show py-2 mb-3">
+        📝 Sua sugestão para <strong><%= fandom.name %></strong> foi enviada com sucesso!
+      </div>
+    <% } else if (feedback === 'reported') { %>
+      <div class="alert alert-warning alert-dismissible fade show py-2 mb-3">
+        ⚠️ Denúncia registrada! A moderação irá analisar o fandom <strong><%= fandom.name %></strong>.
+      </div>
+    <% } else if (feedback === 'updated') { %>
+      <div class="alert alert-success alert-dismissible fade show py-2 mb-3">
+        ✅ As informações do fandom foram atualizadas!
+      </div>
+    <% } %>
+
+    <!-- BARRA SUPERIOR FORA DO BLOCO DO FANDOM -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <a href="/games" class="btn btn-outline-secondary btn-sm">← Todos os Fandoms</a>
+
+      <!-- BOTÕES DE SUGESTÃO (CADERNO + LÁPIS) E DENÚNCIA (TRIÂNGULO COM !) ACIMA DO CANTO DIREITO -->
+      <div class="d-flex align-items-center gap-2">
+        <button 
+          type="button" 
+          id="btnToggleSuggest" 
+          class="btn btn-sm btn-outline-info d-flex align-items-center gap-1" 
+          title="Enviar sugestão para esta wiki"
+        >
+          <!-- Ícone SVG: Caderno com Lápis -->
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          <span class="d-none d-sm-inline">Sugestões</span>
+        </button>
+
+        <button 
+          type="button" 
+          id="btnToggleReport" 
+          class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1" 
+          title="Denunciar este Fandom"
+        >
+          <!-- Ícone SVG: Triângulo de Alerta Amarelo/Vermelho com ! no meio -->
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="#f59e0b" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13" stroke="#111827" stroke-width="2.5"></line>
+            <circle cx="12" cy="17" r="1" fill="#111827" stroke="none"></circle>
+          </svg>
+          <span class="d-none d-sm-inline text-warning">Denunciar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- PAINEL OCULTO DE SUGESTÕES (ABRE AO CLICAR NO CADERNO COM LÁPIS) -->
+    <div id="suggestPanel" class="card p-3 bg-dark text-light border-info mb-3 d-none">
+      <form action="/games/<%= encodeURIComponent(fandom.name) %>/suggest" method="POST">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <strong class="text-info">📝 Enviar Sugestão para <%= fandom.name %></strong>
+          <button type="button" class="btn-close btn-close-white btn-sm" onclick="document.getElementById('suggestPanel').classList.add('d-none')"></button>
+        </div>
+        <div class="input-group">
+          <input type="text" name="suggestion" class="form-control bg-dark text-light border-secondary" placeholder="Sugira melhorias na descrição, tags ou organização desta wiki..." required>
+          <button type="submit" class="btn btn-info text-dark fw-bold">Enviar</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- PAINEL OCULTO DE DENÚNCIA (ABRE AO CLICAR NO TRIÂNGULO COM !) -->
+    <div id="reportPanel" class="card p-3 bg-dark text-light border-danger mb-3 d-none">
+      <form action="/games/<%= encodeURIComponent(fandom.name) %>/report" method="POST">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <strong class="text-warning">⚠️ Denunciar Fandom: <%= fandom.name %></strong>
+          <button type="button" class="btn-close btn-close-white btn-sm" onclick="document.getElementById('reportPanel').classList.add('d-none')"></button>
+        </div>
+        <div class="row g-2">
+          <div class="col-12 col-md-4">
+            <select name="reason" class="form-select bg-dark text-light border-secondary">
+              <option value="Fandom duplicado">Fandom duplicado</option>
+              <option value="Spam ou texto sem sentido">Spam / Texto sem sentido</option>
+              <option value="Conteúdo ofensivo">Conteúdo ofensivo</option>
+              <option value="Informações falsas">Informações falsas</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-6">
+            <input type="text" name="details" class="form-control bg-dark text-light border-secondary" placeholder="Detalhes opcionais da denúncia...">
+          </div>
+          <div class="col-12 col-md-2">
+            <button type="submit" class="btn btn-danger w-100">Denunciar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- CABEÇALHO WIKI DO FANDOM -->
+    <div class="card p-4 bg-dark text-light border-secondary border-start border-4 <%= fandom.isOfficial ? 'border-info' : 'border-secondary' %> mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        
+        <!-- Esquerda: Miniatura + Dados do Fandom -->
+        <div class="d-flex gap-3 align-items-start flex-grow-1">
+          <div class="rounded border border-secondary flex-shrink-0 overflow-hidden d-flex align-items-center justify-content-center" style="width: 92px; height: 92px; background-color: #12121c;">
+            <% if (fandom.imageUrl) { %>
+              <img 
+                src="<%= fandom.imageUrl %>" 
+                alt="<%= fandom.name %>" 
+                style="width: 100%; height: 100%; object-fit: cover;"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+              >
+              <span style="display: none; font-size: 2.2rem;">🎮</span>
+            <% } else { %>
+              <span style="font-size: 2.2rem;">🎮</span>
+            <% } %>
+          </div>
+
+          <div>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+              <span class="badge bg-secondary"><%= fandom.genre %></span>
+              <span class="badge bg-danger">Dificuldade: <%= fandom.difficulty %></span>
+              <span class="badge bg-info text-dark"><%= guides.length %> <%= guides.length === 1 ? 'guia publicado' : 'guias publicados' %></span>
+              <% if (fandom.isOfficial) { %>
+                <span class="badge bg-info text-dark rounded-pill">✓ Oficial</span>
+              <% } else { %>
+                <span class="badge bg-secondary rounded-pill">🌐 Comunidade</span>
+              <% } %>
+            </div>
+            <h1 class="font-brand text-accent mb-2"><%= fandom.name %></h1>
+            <p class="text-light fs-6 mb-0" style="max-width: 700px;"><%= fandom.description %></p>
+          </div>
+        </div>
+
+        <!-- Direita: Botão Criar Guia + Controles de Criador/Admin (para Fandoms da Comunidade) -->
+        <div class="d-flex flex-column align-items-end gap-2">
+          <a href="/guides/new?game=<%= encodeURIComponent(fandom.name) %>" class="btn btn-primary-custom">
+            + Criar Guia para <%= fandom.name %>
+          </a>
+
+          <% if (!fandom.isOfficial) { %>
+            <div class="d-flex gap-2 mt-1">
+              <a href="/games/<%= encodeURIComponent(fandom.name) %>/edit" class="btn btn-sm btn-outline-warning" title="Editar este Fandom (Criador/Admin)">
+                ✏️ Editar Fandom
+              </a>
+              <form action="/games/<%= encodeURIComponent(fandom.name) %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir o fandom <%= fandom.name %>? Os guias existentes serão movidos para Geral.');">
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir este Fandom (Criador/Admin)">
+                  🗑️ Excluir
+                </button>
+              </form>
+            </div>
+            <small class="text-muted" style="font-size: 0.72rem;">Controles de Criador / Staff</small>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- TAGS ESPECÍFICAS DESTE JOGO -->
+      <% if (gameTags && gameTags.length > 0) { %>
+        <div class="mt-4 pt-3 border-top border-secondary">
+          <small class="text-muted d-block mb-2">Tópicos e tags dentro de <%= fandom.name %>:</small>
+          <div class="d-flex flex-wrap gap-2">
+            <% gameTags.forEach(tag => { %>
+              <a href="/guides?game=<%= encodeURIComponent(fandom.name) %>&tag=<%= encodeURIComponent(tag.name) %>" class="badge bg-dark border border-info text-info text-decoration-none">
+                #<%= tag.name %> (<%= tag.count %>)
+              </a>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- POSTS E GUIAS DESTE FANDOM -->
+    <h3 class="font-brand text-accent mb-3">📖 Guias & Discussões de <%= fandom.name %></h3>
+
+    <% if (guides.length === 0) { %>
+      <div class="card p-4 bg-dark text-light border-secondary text-center">
+        <p class="text-muted mb-3">Ainda não há nenhum guia publicado para <strong><%= fandom.name %></strong>.</p>
+        <a href="/guides/new?game=<%= encodeURIComponent(fandom.name) %>" class="btn btn-outline-info align-self-center">
+          Seja o primeiro a contribuir com este Fandom
+        </a>
+      </div>
+    <% } else { %>
+      <div class="row g-4">
+        <% guides.forEach(guide => { %>
+          <div class="col-12 col-md-6">
+            <div class="card bg-dark text-light border-secondary p-3 h-100 d-flex flex-column">
+              <h4><%= guide.title %></h4>
+
+              <% if (guide.tags && guide.tags.length > 0) { %>
+                <div class="d-flex flex-wrap gap-1 mb-2">
+                  <% guide.tags.forEach(t => { %>
+                    <a href="/guides?tag=<%= encodeURIComponent(t) %>" class="text-accent font-monospace small text-decoration-none">#<%= t %></a>
+                  <% }) %>
+                </div>
+              <% } %>
+
+              <p class="text-muted flex-grow-1"><%= guide.content.length > 120 ? guide.content.substring(0, 120) + '...' : guide.content %></p>
+              
+              <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
+                <small class="text-muted">💬 <%= guide.comments ? guide.comments.length : 0 %> comentários</small>
+                <a href="/guides/<%= guide.id %>" class="btn btn-outline-info btn-sm">Ler completo →</a>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </main>
+
+  <script>
+    const btnSuggest = document.getElementById('btnToggleSuggest');
+    const btnReport = document.getElementById('btnToggleReport');
+    const suggestPanel = document.getElementById('suggestPanel');
+    const reportPanel = document.getElementById('reportPanel');
+
+    btnSuggest.addEventListener('click', () => {
+      reportPanel.classList.add('d-none');
+      suggestPanel.classList.toggle('d-none');
+    });
+
+    btnReport.addEventListener('click', () => {
+      suggestPanel.classList.add('d-none');
+      reportPanel.classList.toggle('d-none');
+    });
+  </script>
+  <%- include('partials/footer') %>
+</body>
+</html>
