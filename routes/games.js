@@ -1,103 +1,55 @@
 var express = require('express');
 var router = express.Router();
+const { dbAll, dbGet, dbRun } = require('../database/db');
 
-const officialGames = [
-  {
-    name: 'Fear & Hunger',
-    genre: 'RPG / Survival Horror',
-    difficulty: 'Extrema',
-    isOfficial: true,
-    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=300&q=80',
-    description: 'Um jogo brutal focado em exploração masoquista, gestão de recursos e escolhas de alto risco nas masmorras de Prehevil.',
-    extendedDescription: 'Comunidade dedicada a rotas de sobrevivência, finais S, tabelas de fraquezas de chefes, alquimia e lore profundo do universo criado por Miro Haverinen.'
-  },
-  {
-    name: 'Rain World',
-    genre: 'Survival Platformer',
-    difficulty: 'Muito Alta',
-    isOfficial: true,
-    imageUrl: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=300&q=80',
-    description: 'Controle um Slugcat num ecossistema pré-histórico hostil com IA de predadores dinâmica e ciclos de chuva mortais.',
-    extendedDescription: 'Espaço para compartilhar mapas de regiões, comportamento de criaturas, rotas de passagem, pérolas de lore e estratégias para todas as campanhas de Downpour.'
-  },
-  {
-    name: 'La-Mulana',
-    genre: 'Metroidvania / Puzzle',
-    difficulty: 'Extrema',
-    isOfficial: true,
-    imageUrl: 'https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=300&q=80',
-    description: 'Ruínas antigas repletas de armadilhas e enigmas arqueológicos complexos que exigem anotações reais para serem decifrados.',
-    extendedDescription: 'Arquivo colaborativo de tabuletas traduzidas, dicas sem spoilers pesados para enigmas de Eg-Lana e localização de softwares e selos.'
-  },
-  {
-    name: 'Pathologic 2',
-    genre: 'Survival / Narrative',
-    difficulty: 'Muito Alta',
-    isOfficial: true,
-    imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=300&q=80',
-    description: 'Uma simulação angustiante de 12 dias combatendo uma praga mortal numa cidade isolada onde recursos e tempo são escassos.',
-    extendedDescription: 'Discussões sobre gestão de imunidade e fome, preparo de tinturas, rotas de trocas noturnas e análise teatral dos eventos da Cidade-no-Gorkhon.'
-  },
-  {
-    name: 'Nine Sols',
-    genre: 'Action Platformer',
-    difficulty: 'Alta',
-    isOfficial: true,
-    imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=300&q=80',
-    description: 'Ação 2D desenhada à mão focada em combate de deflexão (parry) num universo Taopunk sombrio.',
-    extendedDescription: 'Guias de builds de Jades, timing de Talismãs e Unbounded Counter contra os Sols, além de segredos para o final verdadeiro.'
-  },
-  {
-    name: 'Vagrant Story',
-    genre: 'Tactical RPG',
-    difficulty: 'Alta',
-    isOfficial: true,
-    imageUrl: 'https://images.unsplash.com/photo-1519074069444-1ba4fff66d16?w=300&q=80',
-    description: 'Clássico sombrio focado em forja de armas, afinidades elementais e combate tático por partes do corpo.',
-    extendedDescription: 'Manuais de combinação de metais (Damascus), controle de Risk, cadeias de Battle Abilities e exploração dos segredos de Leá Monde.'
-  }
-];
-
-let communityGames = [
-  {
-    name: 'Kenshi',
-    genre: 'RPG Sandbox / Estratégia',
-    difficulty: 'Muito Alta',
-    isOfficial: false,
-    creator: 'Comunidade',
-    imageUrl: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=300&q=80',
-    description: 'RPG de mundo aberto implacável onde você não é o escolhido e precisa sobreviver, construir e recrutar num mundo pós-apocalíptico.',
-    extendedDescription: 'Compartilhe locais seguros para montar entrepostos, rotas de comércio lucrativas, recrutas únicos e estratégias para enfrentar as facções do continente.'
-  }
-];
-
-let fandomReports = [];
-let fandomSuggestions = [];
-
-router.getAllGames = function() {
+function formatGame(row) {
+  if (!row) return null;
   return {
-    official: officialGames,
-    community: communityGames
+    id: row.id,
+    name: row.name,
+    genre: row.genre,
+    difficulty: row.difficulty,
+    isOfficial: Boolean(row.is_official),
+    creatorId: row.creator_id,
+    creator: row.creator_name || 'Comunidade',
+    imageUrl: row.image_url || '',
+    description: row.description,
+    extendedDescription: row.extended_description || ''
+  };
+}
+
+router.getAllGames = async function() {
+  const rows = await dbAll('SELECT * FROM games ORDER BY is_official DESC, id ASC');
+  return {
+    official: rows.filter(r => r.is_official === 1).map(formatGame),
+    community: rows.filter(r => r.is_official === 0).map(formatGame)
   };
 };
 
 /* GET Lista Unificada de Fandoms */
-router.get('/', function(req, res, next) {
-  const guidesRouter = require('./guides');
-  const allGuides = guidesRouter.getGuides();
+router.get('/', async function(req, res, next) {
+  try {
+    const gameRows = await dbAll('SELECT * FROM games ORDER BY is_official DESC, id ASC');
+    const guideRows = await dbAll('SELECT game FROM guides');
 
-  const countPosts = (gameName) =>
-    allGuides.filter(g => g.game && g.game.toLowerCase() === gameName.toLowerCase()).length;
+    const countPosts = (gameName) =>
+      guideRows.filter(g => g.game && g.game.toLowerCase() === gameName.toLowerCase()).length;
 
-  const mergedGames = [
-    ...officialGames.map(g => ({ ...g, guideCount: countPosts(g.name) })),
-    ...communityGames.map(g => ({ ...g, guideCount: countPosts(g.name) }))
-  ];
+    const mergedGames = gameRows.map(row => {
+      const formatted = formatGame(row);
+      return {
+        ...formatted,
+        guideCount: countPosts(formatted.name)
+      };
+    });
 
-  res.render('games', {
-    title: 'Fandoms & Wikis',
-    games: mergedGames
-  });
+    res.render('games', {
+      title: 'Fandoms & Wikis',
+      games: mergedGames
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 /* GET Formulário para Criar Fandom da Comunidade */
@@ -106,180 +58,213 @@ router.get('/new', function(req, res, next) {
 });
 
 /* POST Processar Criação de Fandom da Comunidade */
-router.post('/', function(req, res, next) {
-  const { name, genre, difficulty, imageUrl, description, extendedDescription } = req.body;
-  const cleanName = name ? name.trim() : '';
+router.post('/', async function(req, res, next) {
+  try {
+    const { name, genre, difficulty, imageUrl, description, extendedDescription } = req.body;
+    const cleanName = name ? name.trim() : '';
 
-  const existsInOfficial = officialGames.some(g => g.name.toLowerCase() === cleanName.toLowerCase());
-  const existsInCommunity = communityGames.some(g => g.name.toLowerCase() === cleanName.toLowerCase());
+    const duplicate = await dbGet('SELECT id FROM games WHERE LOWER(name) = ?', [cleanName.toLowerCase()]);
+    if (duplicate) {
+      return res.render('new-game', {
+        title: 'Criar Fandom da Comunidade',
+        error: `O Fandom "${cleanName}" já está cadastrado! Procure-o na lista.`
+      });
+    }
 
-  if (existsInOfficial || existsInCommunity) {
-    return res.render('new-game', {
-      title: 'Criar Fandom da Comunidade',
-      error: `O Fandom "${cleanName}" já está cadastrado! Procure-o na lista.`
-    });
+    const currentUser = res.locals.currentUser;
+    const creatorId = currentUser ? currentUser.id : null;
+    const creatorName = currentUser ? currentUser.username : 'Comunidade';
+
+    await dbRun(
+      `INSERT INTO games (name, genre, difficulty, is_official, creator_id, creator_name, image_url, description, extended_description)
+       VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?)`,
+      [
+        cleanName,
+        genre || 'Indie / Geral',
+        difficulty || 'Média',
+        creatorId,
+        creatorName,
+        imageUrl ? imageUrl.trim() : '',
+        description,
+        extendedDescription ? extendedDescription.trim() : ''
+      ]
+    );
+
+    res.redirect('/games');
+  } catch (err) {
+    next(err);
   }
-
-  communityGames.push({
-    name: cleanName,
-    genre: genre || 'Indie / Geral',
-    difficulty: difficulty || 'Média',
-    isOfficial: false,
-    creator: 'Criador / Admin',
-    imageUrl: imageUrl ? imageUrl.trim() : '',
-    description: description,
-    extendedDescription: extendedDescription ? extendedDescription.trim() : ''
-  });
-
-  res.redirect('/games');
 });
 
 /* GET Formulário de Edição de Fandom da Comunidade */
-router.get('/:name/edit', function(req, res, next) {
-  const gameName = req.params.name;
-  const fandom = communityGames.find(g => g.name.toLowerCase() === gameName.toLowerCase());
+router.get('/:name/edit', async function(req, res, next) {
+  try {
+    const gameName = req.params.name;
+    const row = await dbGet('SELECT * FROM games WHERE LOWER(name) = ?', [gameName.toLowerCase()]);
 
-  if (!fandom) {
-    return res.status(403).render('error', {
-      message: 'Apenas Fandoms da Comunidade podem ser editados aqui.',
-      error: {}
+    if (!row || row.is_official === 1) {
+      return res.status(403).render('error', {
+        message: 'Apenas Fandoms da Comunidade podem ser editados aqui.',
+        error: {}
+      });
+    }
+
+    res.render('edit-game', {
+      title: `Editar Fandom: ${row.name}`,
+      fandom: formatGame(row),
+      error: null
     });
+  } catch (err) {
+    next(err);
   }
-
-  res.render('edit-game', {
-    title: `Editar Fandom: ${fandom.name}`,
-    fandom: fandom,
-    error: null
-  });
 });
 
 /* POST Salvar Edição de Fandom da Comunidade */
-router.post('/:name/edit', function(req, res, next) {
-  const oldName = req.params.name;
-  const index = communityGames.findIndex(g => g.name.toLowerCase() === oldName.toLowerCase());
+router.post('/:name/edit', async function(req, res, next) {
+  try {
+    const oldName = req.params.name;
+    const row = await dbGet('SELECT * FROM games WHERE LOWER(name) = ? AND is_official = 0', [oldName.toLowerCase()]);
 
-  if (index === -1) {
-    return res.status(404).render('error', { message: 'Fandom não encontrado', error: {} });
-  }
-
-  const { name, genre, difficulty, imageUrl, description, extendedDescription } = req.body;
-  const cleanName = name ? name.trim() : communityGames[index].name;
-
-  const duplicate =
-    officialGames.some(g => g.name.toLowerCase() === cleanName.toLowerCase()) ||
-    communityGames.some((g, i) => i !== index && g.name.toLowerCase() === cleanName.toLowerCase());
-
-  if (duplicate) {
-    return res.render('edit-game', {
-      title: `Editar Fandom: ${communityGames[index].name}`,
-      fandom: communityGames[index],
-      error: `Já existe outro Fandom chamado "${cleanName}".`
-    });
-  }
-
-  const guidesRouter = require('./guides');
-  const allGuides = guidesRouter.getGuides();
-  allGuides.forEach(guide => {
-    if (guide.game && guide.game.toLowerCase() === oldName.toLowerCase()) {
-      guide.game = cleanName;
+    if (!row) {
+      return res.status(404).render('error', { message: 'Fandom não encontrado', error: {} });
     }
-  });
 
-  communityGames[index] = {
-    ...communityGames[index],
-    name: cleanName,
-    genre: genre || 'Indie / Geral',
-    difficulty: difficulty || 'Média',
-    imageUrl: imageUrl ? imageUrl.trim() : '',
-    description: description,
-    extendedDescription: extendedDescription ? extendedDescription.trim() : ''
-  };
+    const { name, genre, difficulty, imageUrl, description, extendedDescription } = req.body;
+    const cleanName = name ? name.trim() : row.name;
 
-  res.redirect('/games/' + encodeURIComponent(cleanName) + '?feedback=updated');
+    const duplicate = await dbGet(
+      'SELECT id FROM games WHERE LOWER(name) = ? AND id != ?',
+      [cleanName.toLowerCase(), row.id]
+    );
+
+    if (duplicate) {
+      return res.render('edit-game', {
+        title: `Editar Fandom: ${row.name}`,
+        fandom: formatGame(row),
+        error: `Já existe outro Fandom chamado "${cleanName}".`
+      });
+    }
+
+    await dbRun(
+      `UPDATE games SET name = ?, genre = ?, difficulty = ?, image_url = ?, description = ?, extended_description = ?
+       WHERE id = ?`,
+      [
+        cleanName,
+        genre || 'Indie / Geral',
+        difficulty || 'Média',
+        imageUrl ? imageUrl.trim() : '',
+        description,
+        extendedDescription ? extendedDescription.trim() : '',
+        row.id
+      ]
+    );
+
+    // Atualiza o nome do jogo nas postagens vinculadas
+    await dbRun('UPDATE guides SET game = ? WHERE LOWER(game) = ?', [cleanName, oldName.toLowerCase()]);
+
+    res.redirect('/games/' + encodeURIComponent(cleanName) + '?feedback=updated');
+  } catch (err) {
+    next(err);
+  }
 });
 
 /* POST Excluir Fandom da Comunidade */
-router.post('/:name/delete', function(req, res, next) {
-  const gameName = req.params.name;
-  const exists = communityGames.some(g => g.name.toLowerCase() === gameName.toLowerCase());
+router.post('/:name/delete', async function(req, res, next) {
+  try {
+    const gameName = req.params.name;
+    const row = await dbGet('SELECT * FROM games WHERE LOWER(name) = ? AND is_official = 0', [gameName.toLowerCase()]);
 
-  if (exists) {
-    communityGames = communityGames.filter(g => g.name.toLowerCase() !== gameName.toLowerCase());
-    const guidesRouter = require('./guides');
-    const allGuides = guidesRouter.getGuides();
-    allGuides.forEach(guide => {
-      if (guide.game && guide.game.toLowerCase() === gameName.toLowerCase()) {
-        guide.game = 'Geral';
-      }
-    });
+    if (row) {
+      await dbRun('DELETE FROM games WHERE id = ?', [row.id]);
+      await dbRun("UPDATE guides SET game = 'Geral' WHERE LOWER(game) = ?", [gameName.toLowerCase()]);
+    }
+
+    res.redirect('/games');
+  } catch (err) {
+    next(err);
   }
-
-  res.redirect('/games');
 });
 
 /* POST Enviar Sugestão */
-router.post('/:name/suggest', function(req, res, next) {
-  const gameName = req.params.name;
-  const { suggestion } = req.body;
-  if (suggestion && suggestion.trim()) {
-    fandomSuggestions.push({
-      fandom: gameName,
-      text: suggestion.trim(),
-      createdAt: new Date().toLocaleString('pt-BR')
-    });
+router.post('/:name/suggest', async function(req, res, next) {
+  try {
+    const gameName = req.params.name;
+    const { suggestion } = req.body;
+    if (suggestion && suggestion.trim()) {
+      await dbRun(
+        'INSERT INTO fandom_feedback (fandom_name, type, details, created_at) VALUES (?, ?, ?, ?)',
+        [gameName, 'suggestion', suggestion.trim(), new Date().toLocaleString('pt-BR')]
+      );
+    }
+    res.redirect('/games/' + encodeURIComponent(gameName) + '?feedback=suggested');
+  } catch (err) {
+    next(err);
   }
-  res.redirect('/games/' + encodeURIComponent(gameName) + '?feedback=suggested');
 });
 
 /* POST Enviar Denúncia */
-router.post('/:name/report', function(req, res, next) {
-  const gameName = req.params.name;
-  const { reason, details } = req.body;
-  fandomReports.push({
-    fandom: gameName,
-    reason: reason || 'Conteúdo inadequado / Duplicado',
-    details: details ? details.trim() : '',
-    createdAt: new Date().toLocaleString('pt-BR')
-  });
-  res.redirect('/games/' + encodeURIComponent(gameName) + '?feedback=reported');
+router.post('/:name/report', async function(req, res, next) {
+  try {
+    const gameName = req.params.name;
+    const { reason, details } = req.body;
+    await dbRun(
+      'INSERT INTO fandom_feedback (fandom_name, type, reason, details, created_at) VALUES (?, ?, ?, ?, ?)',
+      [gameName, 'report', reason || 'Conteúdo inadequado', details ? details.trim() : '', new Date().toLocaleString('pt-BR')]
+    );
+    res.redirect('/games/' + encodeURIComponent(gameName) + '?feedback=reported');
+  } catch (err) {
+    next(err);
+  }
 });
 
 /* GET Página Wiki de um Fandom Específico */
-router.get('/:name', function(req, res, next) {
-  const guidesRouter = require('./guides');
-  const gameName = req.params.name;
-  const allGuides = guidesRouter.getGuides();
+router.get('/:name', async function(req, res, next) {
+  try {
+    const gameName = req.params.name;
+    const row = await dbGet('SELECT * FROM games WHERE LOWER(name) = ?', [gameName.toLowerCase()]);
 
-  const fandom =
-    officialGames.find(g => g.name.toLowerCase() === gameName.toLowerCase()) ||
-    communityGames.find(g => g.name.toLowerCase() === gameName.toLowerCase());
+    if (!row) {
+      return res.status(404).render('error', { message: 'Fandom não encontrado', error: {} });
+    }
 
-  if (!fandom) {
-    return res.status(404).render('error', { message: 'Fandom não encontrado', error: {} });
-  }
+    const fandom = formatGame(row);
+    const guideRows = await dbAll('SELECT * FROM guides WHERE LOWER(game) = ? ORDER BY id DESC', [fandom.name.toLowerCase()]);
+    const commentCounts = await dbAll('SELECT guide_id, COUNT(*) as total FROM comments GROUP BY guide_id');
+    const countMap = {};
+    commentCounts.forEach(c => { countMap[c.guide_id] = c.total; });
 
-  const gameGuides = allGuides.filter(
-    g => g.game && g.game.toLowerCase() === fandom.name.toLowerCase()
-  );
+    const gameGuides = guideRows.map(g => ({
+      id: String(g.id),
+      title: g.title,
+      game: g.game,
+      category: g.category,
+      tags: JSON.parse(g.tags || '[]'),
+      imageUrl: g.image_url,
+      content: g.content,
+      comments: new Array(countMap[g.id] || 0)
+    }));
 
-  const tagCounts = {};
-  gameGuides.forEach(g => {
-    (g.tags || []).forEach(t => {
-      tagCounts[t] = (tagCounts[t] || 0) + 1;
+    const tagCounts = {};
+    gameGuides.forEach(g => {
+      g.tags.forEach(t => {
+        tagCounts[t] = (tagCounts[t] || 0) + 1;
+      });
     });
-  });
 
-  const gameTags = Object.entries(tagCounts)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count);
+    const gameTags = Object.entries(tagCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
 
-  res.render('game-detail', {
-    title: `Wiki: ${fandom.name}`,
-    fandom: fandom,
-    guides: gameGuides,
-    gameTags: gameTags,
-    feedback: req.query.feedback || null
-  });
+    res.render('game-detail', {
+      title: `Wiki: ${fandom.name}`,
+      fandom: fandom,
+      guides: gameGuides,
+      gameTags: gameTags,
+      feedback: req.query.feedback || null
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;
