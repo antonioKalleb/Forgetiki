@@ -61,12 +61,14 @@
         </div>
       <% } %>
 
-      <div class="d-flex gap-2 mt-4 pt-3 border-top border-secondary">
+      <% if (canEditGuide) { %>
+<div class="d-flex gap-2 mt-4 pt-3 border-top border-secondary">
         <a href="/guides/<%= guide.id %>/edit" class="btn btn-warning btn-sm">✏️ Editar Post</a>
         <form action="/guides/<%= guide.id %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir esta postagem?');">
           <button type="submit" class="btn btn-danger btn-sm">🗑️ Excluir Post</button>
         </form>
       </div>
+<% } %>
     </div>
 
     <!-- SEÇÃO DE COMENTÁRIOS -->

@@ -11,6 +11,29 @@ const postCategories = [
   { name: 'Discussão', icon: '❓' }
 ];
 
+function canManage(user, ownerId, ownerName) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (ownerId !== null && ownerId !== undefined && Number(user.id) === Number(ownerId)) {
+    return true;
+  }
+  if ((ownerId === null || ownerId === undefined) && ownerName) {
+    return user.username.toLowerCase() === ownerName.toLowerCase();
+  }
+  return false;
+}
+
+function safeJsonArray(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
 function formatGuide(row, comments = []) {
   if (!row) return null;
   return {
@@ -18,9 +41,9 @@ function formatGuide(row, comments = []) {
     title: row.title,
     game: row.game,
     category: row.category || 'Guia',
-    tags: JSON.parse(row.tags || '[]'),
+    tags: safeJsonArray(row.tags),
     imageUrl: row.image_url || '',
-    links: JSON.parse(row.links || '[]'),
+    links: safeJsonArray(row.links),
     content: row.content,
     authorId: row.author_id,
     authorName: row.author_name || 'Anônimo',
@@ -29,7 +52,7 @@ function formatGuide(row, comments = []) {
   };
 }
 
-function formatComment(row) {
+function formatComment(row, currentUser = null) {
   return {
     id: String(row.id),
     guideId: String(row.guide_id),
@@ -37,7 +60,8 @@ function formatComment(row) {
     author: row.author,
     text: row.text,
     edited: Boolean(row.edited),
-    createdAt: row.created_at
+    createdAt: row.created_at,
+    canEdit: canManage(currentUser, row.author_id, row.author)
   };
 }
 
@@ -224,12 +248,14 @@ router.get('/:id', async function(req, res, next) {
       return res.status(404).render('error', { message: 'Postagem não encontrada', error: {} });
     }
 
+    const currentUser = res.locals.currentUser;
     const commentRows = await dbAll('SELECT * FROM comments WHERE guide_id = ? ORDER BY id ASC', [row.id]);
-    const guide = formatGuide(row, commentRows.map(formatComment));
+    const guide = formatGuide(row, commentRows.map(c => formatComment(c, currentUser)));
 
     res.render('guide-detail', {
       title: guide.title,
       guide: guide,
+      canEditGuide: canManage(currentUser, guide.authorId, guide.authorName),
       getYoutubeEmbedUrl: getYoutubeEmbedUrl
     });
   } catch (err) {
@@ -268,7 +294,15 @@ router.post('/:id/comments', async function(req, res, next) {
 router.post('/:id/comments/:commentId/edit', async function(req, res, next) {
   try {
     const comment = await dbGet('SELECT * FROM comments WHERE id = ? AND guide_id = ?', [req.params.commentId, req.params.id]);
-    if (comment && req.body.text && req.body.text.trim()) {
+    if (!comment) {
+      return res.status(404).render('error', { message: 'Comentário não encontrado', error: {} });
+    }
+
+    if (!canManage(res.locals.currentUser, comment.author_id, comment.author)) {
+      return res.status(403).render('error', { message: 'Você não tem permissão para editar este comentário.', error: {} });
+    }
+
+    if (req.body.text && req.body.text.trim()) {
       await dbRun('UPDATE comments SET text = ?, edited = 1 WHERE id = ?', [req.body.text.trim(), comment.id]);
     }
     res.redirect('/guides/' + req.params.id);
@@ -280,6 +314,15 @@ router.post('/:id/comments/:commentId/edit', async function(req, res, next) {
 /* POST Excluir Comentário */
 router.post('/:id/comments/:commentId/delete', async function(req, res, next) {
   try {
+    const comment = await dbGet('SELECT * FROM comments WHERE id = ? AND guide_id = ?', [req.params.commentId, req.params.id]);
+    if (!comment) {
+      return res.status(404).render('error', { message: 'Comentário não encontrado', error: {} });
+    }
+
+    if (!canManage(res.locals.currentUser, comment.author_id, comment.author)) {
+      return res.status(403).render('error', { message: 'Você não tem permissão para excluir este comentário.', error: {} });
+    }
+
     await dbRun('DELETE FROM comments WHERE id = ? AND guide_id = ?', [req.params.commentId, req.params.id]);
     res.redirect('/guides/' + req.params.id);
   } catch (err) {
@@ -293,6 +336,10 @@ router.get('/:id/edit', async function(req, res, next) {
     const row = await dbGet('SELECT * FROM guides WHERE id = ?', [req.params.id]);
     if (!row) {
       return res.status(404).render('error', { message: 'Postagem não encontrada', error: {} });
+    }
+
+    if (!canManage(res.locals.currentUser, row.author_id, row.author_name)) {
+      return res.status(403).render('error', { message: 'Você não tem permissão para editar esta postagem.', error: {} });
     }
 
     const allRows = await dbAll('SELECT * FROM guides');
@@ -313,6 +360,15 @@ router.get('/:id/edit', async function(req, res, next) {
 /* POST Salvar Edição de Post */
 router.post('/:id/edit', async function(req, res, next) {
   try {
+    const row = await dbGet('SELECT * FROM guides WHERE id = ?', [req.params.id]);
+    if (!row) {
+      return res.status(404).render('error', { message: 'Postagem não encontrada', error: {} });
+    }
+
+    if (!canManage(res.locals.currentUser, row.author_id, row.author_name)) {
+      return res.status(403).render('error', { message: 'Você não tem permissão para editar esta postagem.', error: {} });
+    }
+
     const { title, game, category, tags, imageUrl, links, content } = req.body;
     await dbRun(
       `UPDATE guides SET title = ?, game = ?, category = ?, tags = ?, image_url = ?, links = ?, content = ?
@@ -338,6 +394,15 @@ router.post('/:id/edit', async function(req, res, next) {
 /* POST Excluir Post */
 router.post('/:id/delete', async function(req, res, next) {
   try {
+    const row = await dbGet('SELECT * FROM guides WHERE id = ?', [req.params.id]);
+    if (!row) {
+      return res.status(404).render('error', { message: 'Postagem não encontrada', error: {} });
+    }
+
+    if (!canManage(res.locals.currentUser, row.author_id, row.author_name)) {
+      return res.status(403).render('error', { message: 'Você não tem permissão para excluir esta postagem.', error: {} });
+    }
+
     await dbRun('DELETE FROM guides WHERE id = ?', [req.params.id]);
     res.redirect('/guides');
   } catch (err) {

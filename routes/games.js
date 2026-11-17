@@ -2,6 +2,18 @@ var express = require('express');
 var router = express.Router();
 const { dbAll, dbGet, dbRun } = require('../database/db');
 
+function canManage(user, ownerId, ownerName) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (ownerId !== null && ownerId !== undefined && Number(user.id) === Number(ownerId)) {
+    return true;
+  }
+  if ((ownerId === null || ownerId === undefined) && ownerName && ownerName !== 'Comunidade') {
+    return user.username.toLowerCase() === ownerName.toLowerCase();
+  }
+  return false;
+}
+
 function formatGame(row) {
   if (!row) return null;
   return {
@@ -109,6 +121,13 @@ router.get('/:name/edit', async function(req, res, next) {
       });
     }
 
+    if (!canManage(res.locals.currentUser, row.creator_id, row.creator_name)) {
+      return res.status(403).render('error', {
+        message: 'Apenas o criador deste Fandom ou um Administrador pode editá-lo.',
+        error: {}
+      });
+    }
+
     res.render('edit-game', {
       title: `Editar Fandom: ${row.name}`,
       fandom: formatGame(row),
@@ -127,6 +146,13 @@ router.post('/:name/edit', async function(req, res, next) {
 
     if (!row) {
       return res.status(404).render('error', { message: 'Fandom não encontrado', error: {} });
+    }
+
+    if (!canManage(res.locals.currentUser, row.creator_id, row.creator_name)) {
+      return res.status(403).render('error', {
+        message: 'Apenas o criador deste Fandom ou um Administrador pode editá-lo.',
+        error: {}
+      });
     }
 
     const { name, genre, difficulty, imageUrl, description, extendedDescription } = req.body;
@@ -159,7 +185,6 @@ router.post('/:name/edit', async function(req, res, next) {
       ]
     );
 
-    // Atualiza o nome do jogo nas postagens vinculadas
     await dbRun('UPDATE guides SET game = ? WHERE LOWER(game) = ?', [cleanName, oldName.toLowerCase()]);
 
     res.redirect('/games/' + encodeURIComponent(cleanName) + '?feedback=updated');
@@ -174,10 +199,19 @@ router.post('/:name/delete', async function(req, res, next) {
     const gameName = req.params.name;
     const row = await dbGet('SELECT * FROM games WHERE LOWER(name) = ? AND is_official = 0', [gameName.toLowerCase()]);
 
-    if (row) {
-      await dbRun('DELETE FROM games WHERE id = ?', [row.id]);
-      await dbRun("UPDATE guides SET game = 'Geral' WHERE LOWER(game) = ?", [gameName.toLowerCase()]);
+    if (!row) {
+      return res.status(404).render('error', { message: 'Fandom não encontrado', error: {} });
     }
+
+    if (!canManage(res.locals.currentUser, row.creator_id, row.creator_name)) {
+      return res.status(403).render('error', {
+        message: 'Apenas o criador deste Fandom ou um Administrador pode excluí-lo.',
+        error: {}
+      });
+    }
+
+    await dbRun('DELETE FROM games WHERE id = ?', [row.id]);
+    await dbRun("UPDATE guides SET game = 'Geral' WHERE LOWER(game) = ?", [gameName.toLowerCase()]);
 
     res.redirect('/games');
   } catch (err) {
@@ -241,6 +275,8 @@ router.get('/:name', async function(req, res, next) {
       tags: JSON.parse(g.tags || '[]'),
       imageUrl: g.image_url,
       content: g.content,
+      authorName: g.author_name || 'Anônimo',
+      createdAt: g.created_at,
       comments: new Array(countMap[g.id] || 0)
     }));
 
@@ -258,6 +294,7 @@ router.get('/:name', async function(req, res, next) {
     res.render('game-detail', {
       title: `Wiki: ${fandom.name}`,
       fandom: fandom,
+      canEditFandom: !fandom.isOfficial && canManage(res.locals.currentUser, fandom.creatorId, fandom.creator),
       guides: gameGuides,
       gameTags: gameTags,
       feedback: req.query.feedback || null

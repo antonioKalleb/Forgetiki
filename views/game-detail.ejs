@@ -123,7 +123,7 @@
             + Criar Post para <%= fandom.name %>
           </a>
 
-          <% if (!fandom.isOfficial) { %>
+          <% if (canEditFandom) { %>
             <div class="d-flex gap-2 mt-1">
               <a href="/games/<%= encodeURIComponent(fandom.name) %>/edit" class="btn btn-sm btn-outline-warning">
                 ✏️ Editar Fandom
