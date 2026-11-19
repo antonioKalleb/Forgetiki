@@ -2,16 +2,18 @@ var express = require('express');
 var router = express.Router();
 const { dbAll, dbGet, dbRun } = require('../database/db');
 
-function canManage(user, ownerId, ownerName) {
+// Trava estrita de autoria exclusivamente pelo ID numérico da conta
+function isStrictOwner(user, ownerId) {
+  if (!user) return false;
+  if (ownerId === null || ownerId === undefined) return false;
+  return Number(user.id) === Number(ownerId);
+}
+
+// Permissão administrativa/moderação (inclui Admin — usado para exclusão do Fandom)
+function canModerateFandom(user, ownerId) {
   if (!user) return false;
   if (user.role === 'admin') return true;
-  if (ownerId !== null && ownerId !== undefined && Number(user.id) === Number(ownerId)) {
-    return true;
-  }
-  if ((ownerId === null || ownerId === undefined) && ownerName && ownerName !== 'Comunidade') {
-    return user.username.toLowerCase() === ownerName.toLowerCase();
-  }
-  return false;
+  return isStrictOwner(user, ownerId);
 }
 
 function formatGame(row) {
@@ -22,8 +24,8 @@ function formatGame(row) {
     genre: row.genre,
     difficulty: row.difficulty,
     isOfficial: Boolean(row.is_official),
-    creatorId: row.creator_id,
-    creator: row.creator_name || 'Comunidade',
+    creatorId: row.creator_id !== null && row.creator_id !== undefined ? Number(row.creator_id) : null,
+    creator: row.creator_name || (row.is_official ? 'Admin' : 'Comunidade'),
     imageUrl: row.image_url || '',
     description: row.description,
     extendedDescription: row.extended_description || ''
@@ -64,14 +66,22 @@ router.get('/', async function(req, res, next) {
   }
 });
 
-/* GET Formulário para Criar Fandom da Comunidade */
+/* GET Formulário para Criar Fandom da Comunidade (Exclusivo para usuários logados) */
 router.get('/new', function(req, res, next) {
+  if (!res.locals.currentUser) {
+    return res.redirect('/login');
+  }
   res.render('new-game', { title: 'Criar Fandom da Comunidade', error: null });
 });
 
-/* POST Processar Criação de Fandom da Comunidade */
+/* POST Processar Criação de Fandom da Comunidade (Exclusivo para usuários logados) */
 router.post('/', async function(req, res, next) {
   try {
+    const currentUser = res.locals.currentUser;
+    if (!currentUser) {
+      return res.redirect('/login');
+    }
+
     const { name, genre, difficulty, imageUrl, description, extendedDescription } = req.body;
     const cleanName = name ? name.trim() : '';
 
@@ -83,10 +93,6 @@ router.post('/', async function(req, res, next) {
       });
     }
 
-    const currentUser = res.locals.currentUser;
-    const creatorId = currentUser ? currentUser.id : null;
-    const creatorName = currentUser ? currentUser.username : 'Comunidade';
-
     await dbRun(
       `INSERT INTO games (name, genre, difficulty, is_official, creator_id, creator_name, image_url, description, extended_description)
        VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?)`,
@@ -94,8 +100,8 @@ router.post('/', async function(req, res, next) {
         cleanName,
         genre || 'Indie / Geral',
         difficulty || 'Média',
-        creatorId,
-        creatorName,
+        currentUser.id,
+        currentUser.username,
         imageUrl ? imageUrl.trim() : '',
         description,
         extendedDescription ? extendedDescription.trim() : ''
@@ -108,24 +114,18 @@ router.post('/', async function(req, res, next) {
   }
 });
 
-/* GET Formulário de Edição de Fandom da Comunidade */
+/* GET Formulário de Edição de Fandom (ESTRITAMENTE apenas o criador pelo ID) */
 router.get('/:name/edit', async function(req, res, next) {
   try {
+    if (!res.locals.currentUser) {
+      return res.redirect('/login');
+    }
+
     const gameName = req.params.name;
     const row = await dbGet('SELECT * FROM games WHERE LOWER(name) = ?', [gameName.toLowerCase()]);
 
-    if (!row || row.is_official === 1) {
-      return res.status(403).render('error', {
-        message: 'Apenas Fandoms da Comunidade podem ser editados aqui.',
-        error: {}
-      });
-    }
-
-    if (!canManage(res.locals.currentUser, row.creator_id, row.creator_name)) {
-      return res.status(403).render('error', {
-        message: 'Apenas o criador deste Fandom ou um Administrador pode editá-lo.',
-        error: {}
-      });
+    if (!row || row.is_official === 1 || !isStrictOwner(res.locals.currentUser, row.creator_id)) {
+      return res.redirect('/games/' + encodeURIComponent(gameName) + '?feedback=unauthorized');
     }
 
     res.render('edit-game', {
@@ -138,21 +138,22 @@ router.get('/:name/edit', async function(req, res, next) {
   }
 });
 
-/* POST Salvar Edição de Fandom da Comunidade */
+/* POST Salvar Edição de Fandom (ESTRITAMENTE apenas o criador pelo ID) */
 router.post('/:name/edit', async function(req, res, next) {
   try {
+    if (!res.locals.currentUser) {
+      return res.redirect('/login');
+    }
+
     const oldName = req.params.name;
     const row = await dbGet('SELECT * FROM games WHERE LOWER(name) = ? AND is_official = 0', [oldName.toLowerCase()]);
 
     if (!row) {
-      return res.status(404).render('error', { message: 'Fandom não encontrado', error: {} });
+      return res.redirect('/games');
     }
 
-    if (!canManage(res.locals.currentUser, row.creator_id, row.creator_name)) {
-      return res.status(403).render('error', {
-        message: 'Apenas o criador deste Fandom ou um Administrador pode editá-lo.',
-        error: {}
-      });
+    if (!isStrictOwner(res.locals.currentUser, row.creator_id)) {
+      return res.redirect('/games/' + encodeURIComponent(oldName) + '?feedback=unauthorized');
     }
 
     const { name, genre, difficulty, imageUrl, description, extendedDescription } = req.body;
@@ -193,21 +194,22 @@ router.post('/:name/edit', async function(req, res, next) {
   }
 });
 
-/* POST Excluir Fandom da Comunidade */
+/* POST Excluir Fandom da Comunidade (Criador do Fandom ou Admin) */
 router.post('/:name/delete', async function(req, res, next) {
   try {
+    if (!res.locals.currentUser) {
+      return res.redirect('/login');
+    }
+
     const gameName = req.params.name;
     const row = await dbGet('SELECT * FROM games WHERE LOWER(name) = ? AND is_official = 0', [gameName.toLowerCase()]);
 
     if (!row) {
-      return res.status(404).render('error', { message: 'Fandom não encontrado', error: {} });
+      return res.redirect('/games');
     }
 
-    if (!canManage(res.locals.currentUser, row.creator_id, row.creator_name)) {
-      return res.status(403).render('error', {
-        message: 'Apenas o criador deste Fandom ou um Administrador pode excluí-lo.',
-        error: {}
-      });
+    if (!canModerateFandom(res.locals.currentUser, row.creator_id)) {
+      return res.redirect('/games/' + encodeURIComponent(gameName) + '?feedback=unauthorized');
     }
 
     await dbRun('DELETE FROM games WHERE id = ?', [row.id]);
@@ -275,7 +277,8 @@ router.get('/:name', async function(req, res, next) {
       tags: JSON.parse(g.tags || '[]'),
       imageUrl: g.image_url,
       content: g.content,
-      authorName: g.author_name || 'Anônimo',
+      authorId: g.author_id !== null && g.author_id !== undefined ? Number(g.author_id) : null,
+      authorName: (g.author_name && g.author_name.trim()) ? g.author_name : 'Admin',
       createdAt: g.created_at,
       comments: new Array(countMap[g.id] || 0)
     }));
@@ -291,10 +294,14 @@ router.get('/:name', async function(req, res, next) {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
 
+    const isCreator = !fandom.isOfficial && isStrictOwner(res.locals.currentUser, fandom.creatorId);
+    const canDelete = !fandom.isOfficial && canModerateFandom(res.locals.currentUser, fandom.creatorId);
+
     res.render('game-detail', {
       title: `Wiki: ${fandom.name}`,
       fandom: fandom,
-      canEditFandom: !fandom.isOfficial && canManage(res.locals.currentUser, fandom.creatorId, fandom.creator),
+      canEditFandom: isCreator,
+      canDeleteFandom: canDelete,
       guides: gameGuides,
       gameTags: gameTags,
       feedback: req.query.feedback || null

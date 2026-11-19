@@ -5,17 +5,21 @@
   <%- include('partials/navbar') %>
   <main class="container my-5">
 
-    <% if (feedback === 'suggested') { %>
+    <% if (typeof feedback !== 'undefined' && feedback === 'suggested') { %>
       <div class="alert alert-info alert-dismissible fade show py-2 mb-3">
         📝 Sua sugestão para <strong><%= fandom.name %></strong> foi enviada com sucesso!
       </div>
-    <% } else if (feedback === 'reported') { %>
+    <% } else if (typeof feedback !== 'undefined' && feedback === 'reported') { %>
       <div class="alert alert-warning alert-dismissible fade show py-2 mb-3">
         ⚠️ Denúncia registrada! A moderação irá analisar o fandom <strong><%= fandom.name %></strong>.
       </div>
-    <% } else if (feedback === 'updated') { %>
+    <% } else if (typeof feedback !== 'undefined' && feedback === 'updated') { %>
       <div class="alert alert-success alert-dismissible fade show py-2 mb-3">
         ✅ As informações do fandom foram atualizadas!
+      </div>
+    <% } else if (typeof feedback !== 'undefined' && feedback === 'unauthorized') { %>
+      <div class="alert alert-warning border-warning alert-dismissible fade show py-2 mb-3">
+        🔒 <strong>Ação não permitida:</strong> apenas o criador original (<strong><%= fandom.creator %></strong>) pode editar este fandom.
       </div>
     <% } %>
 
@@ -112,6 +116,18 @@
               <% } else { %>
                 <span class="badge bg-secondary rounded-pill">🌐 Comunidade</span>
               <% } %>
+              <small class="text-light opacity-75">✍️ Criado por <strong><%= fandom.creator %></strong></small>
+              <% if (fandom.creatorId) { %>
+                <span class="badge bg-dark border border-secondary text-light d-inline-flex align-items-center gap-1" style="font-size: 0.72rem;">
+                  ID #<%= fandom.creatorId %>
+                  <button type="button" class="btn btn-link p-0 text-info text-decoration-none d-inline-flex align-items-center" title="Copiar ID do criador" onclick="copyTextId('<%= fandom.creatorId %>', this)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </span>
+              <% } %>
             </div>
             <h1 class="font-brand text-accent mb-2"><%= fandom.name %></h1>
             <p class="text-light fs-6 mb-0" style="max-width: 700px;"><%= fandom.description %></p>
@@ -119,27 +135,41 @@
         </div>
 
         <div class="d-flex flex-column align-items-end gap-2">
-          <a href="/guides/new?game=<%= encodeURIComponent(fandom.name) %>" class="btn btn-primary-custom">
-            + Criar Post para <%= fandom.name %>
-          </a>
-
-          <% if (canEditFandom) { %>
-            <div class="d-flex gap-2 mt-1">
-              <a href="/games/<%= encodeURIComponent(fandom.name) %>/edit" class="btn btn-sm btn-outline-warning">
-                ✏️ Editar Fandom
-              </a>
-              <form action="/games/<%= encodeURIComponent(fandom.name) %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir o fandom <%= fandom.name %>? Os posts existentes serão movidos para Geral.');">
-                <button type="submit" class="btn btn-sm btn-outline-danger">
-                  🗑️ Excluir
-                </button>
-              </form>
+          <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+            <a href="/guides/new?game=<%= encodeURIComponent(fandom.name) %>" class="btn btn-primary-custom">
+              + Criar Post para <%= fandom.name %>
+            </a>
+          <% } else { %>
+            <div class="px-3 py-2 rounded border border-secondary bg-dark text-light small text-end" style="max-width: 280px;">
+              🔒 Você não está em uma conta, clique <a href="/login" class="text-info fw-bold text-decoration-underline">aqui</a> para entrar ou criar uma.
             </div>
-            <small class="text-light opacity-50" style="font-size: 0.72rem;">Controles de Criador / Staff</small>
+          <% } %>
+
+          <% if (canEditFandom || canDeleteFandom) { %>
+            <div class="d-flex gap-2 mt-1">
+              <% if (canEditFandom) { %>
+                <a href="/games/<%= encodeURIComponent(fandom.name) %>/edit" class="btn btn-sm btn-outline-warning">
+                  ✏️ Editar Fandom
+                </a>
+              <% } %>
+              <% if (canDeleteFandom) { %>
+                <form action="/games/<%= encodeURIComponent(fandom.name) %>/delete" method="POST" data-fandom="<%= fandom.name %>" onsubmit="return confirm('Tem certeza que deseja excluir o fandom ' + this.dataset.fandom + '? Os posts existentes serão movidos para Geral.');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    🗑️ Excluir
+                  </button>
+                </form>
+              <% } %>
+            </div>
+            <% if (canEditFandom) { %>
+              <small class="text-light opacity-50" style="font-size: 0.72rem;">Controles de Criador</small>
+            <% } else { %>
+              <small class="text-light opacity-50" style="font-size: 0.72rem;">🛡️ Moderação: apenas <strong><%= fandom.creator %></strong> pode editar</small>
+            <% } %>
           <% } %>
         </div>
       </div>
 
-      <!-- SEGUNDA DESCRIÇÃO ESTRUTURADA DA COMUNIDADE (FOCO, REGRAS E BOAS-VINDAS) -->
+      <!-- SEGUNDA DESCRIÇÃO ESTRUTURADA DA COMUNIDADE -->
       <% if (fandom.extendedDescription) { %>
         <div class="mt-4 pt-3 border-top border-secondary text-center">
           <div class="text-accent small font-monospace mb-2" style="letter-spacing: 2px;">═══ ◈ SOBRE A COMUNIDADE ◈ ═══</div>
@@ -169,17 +199,26 @@
     <% if (guides.length === 0) { %>
       <div class="card p-4 bg-dark text-light border-secondary text-center">
         <p class="text-light opacity-75 mb-3">Ainda não há nenhuma postagem publicada para <strong><%= fandom.name %></strong>.</p>
-        <a href="/guides/new?game=<%= encodeURIComponent(fandom.name) %>" class="btn btn-outline-info align-self-center">
-          Seja o primeiro a contribuir com este Fandom
-        </a>
+        <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+          <a href="/guides/new?game=<%= encodeURIComponent(fandom.name) %>" class="btn btn-outline-info align-self-center">
+            Seja o primeiro a contribuir com este Fandom
+          </a>
+        <% } else { %>
+          <p class="text-light opacity-75 small mb-0">
+            Você não está em uma conta, clique <a href="/login" class="text-info fw-bold text-decoration-underline">aqui</a> para entrar ou criar uma e publicar nesta wiki.
+          </p>
+        <% } %>
       </div>
     <% } else { %>
       <div class="row g-4">
         <% guides.forEach(guide => { %>
           <div class="col-12 col-md-6">
             <div class="card bg-dark text-light border-secondary p-3 h-100 d-flex flex-column">
-              <div class="mb-2">
+              <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="badge bg-info text-dark">📌 <%= guide.category || 'Guia' %></span>
+                <small class="text-light opacity-50">
+                  ✍️ <%= guide.authorName || 'Admin' %><% if (guide.authorId) { %> (#<%= guide.authorId %>)<% } %>
+                </small>
               </div>
               <h4><%= guide.title %></h4>
 
@@ -205,6 +244,26 @@
   </main>
 
   <script>
+    function copyTextId(idValue, btn) {
+      if (!idValue) return;
+      const done = () => {
+        const original = btn.innerHTML;
+        btn.innerHTML = '✓';
+        setTimeout(() => { btn.innerHTML = original; }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(String(idValue)).then(done).catch(done);
+      } else {
+        const temp = document.createElement('input');
+        temp.value = String(idValue);
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        done();
+      }
+    }
+
     const btnSuggest = document.getElementById('btnToggleSuggest');
     const btnReport = document.getElementById('btnToggleReport');
     const suggestPanel = document.getElementById('suggestPanel');
